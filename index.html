@@ -27,9 +27,12 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .login-btn:disabled{background:#93afd4;cursor:not-allowed;}
 .login-error{background:#fee2e2;color:var(--danger);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:14px;display:none;}
 .login-error.show{display:block;}
-.login-divider{text-align:center;font-size:12px;color:var(--t3);margin:16px 0;}
+.login-success{background:#d1fae5;color:#065f46;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:14px;display:none;}
+.login-success.show{display:block;}
 .register-link{text-align:center;font-size:13px;color:var(--t2);margin-top:14px;}
 .register-link a{color:var(--ac);cursor:pointer;text-decoration:underline;}
+.pending-back{padding:8px 20px;border-radius:8px;border:1px solid var(--bd);background:var(--s);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:14px;color:var(--t2);transition:all .15s;}
+.pending-back:hover{border-color:var(--ac);color:var(--ac);}
 
 /* ===== APP ===== */
 .app-page{display:none;flex-direction:column;min-height:100vh;}
@@ -123,17 +126,33 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .admin-card{background:var(--s);border:1px solid var(--bd);border-radius:12px;padding:16px;}
 .admin-card h3{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.admin-card-full{background:var(--s);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px;}
+.admin-card-full h3{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+/* pending section highlight */
+.pending-section-card{background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:16px;margin-bottom:16px;}
+.pending-section-card h3{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;color:#92400e;}
+.pending-badge-label{background:#fef9c3;color:#854d0e;border:1px solid #fcd34d;border-radius:20px;font-size:10px;font-weight:700;padding:1px 8px;}
 .user-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);}
 .user-row:last-child{border-bottom:none;}
 .user-email{flex:1;font-size:13px;}
 .user-role{font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;}
-.remove-btn{font-size:11px;color:var(--danger);background:#fee2e2;border:none;padding:2px 8px;border-radius:5px;cursor:pointer;}
+.user-date{font-size:11px;color:var(--t3);white-space:nowrap;}
+.remove-btn{font-size:11px;color:var(--danger);background:#fee2e2;border:none;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:'Sarabun',sans-serif;}
 .remove-btn:hover{background:#fecaca;}
-.add-user-form{display:flex;gap:8px;margin-top:10px;}
+.approve-btn{font-size:11px;color:#065f46;background:#d1fae5;border:none;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:'Sarabun',sans-serif;font-weight:600;}
+.approve-btn:hover{background:#a7f3d0;}
+.reject-btn{font-size:11px;color:var(--danger);background:#fee2e2;border:none;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:'Sarabun',sans-serif;font-weight:600;}
+.reject-btn:hover{background:#fecaca;}
+.approve-role-select{padding:3px 7px;border:1px solid var(--bd);border-radius:5px;font-family:'Sarabun',sans-serif;font-size:12px;outline:none;}
+.add-user-form{display:flex;gap:8px;margin-top:12px;}
 .add-user-form input{flex:1;padding:7px 10px;border:1px solid var(--bd);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:13px;outline:none;}
 .add-user-form input:focus{border-color:var(--ac);}
 .add-user-form select{padding:7px 10px;border:1px solid var(--bd);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:13px;outline:none;}
 .add-user-form button{padding:7px 14px;border-radius:8px;border:none;background:var(--ac);color:#fff;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.empty-state{color:var(--t3);font-size:13px;padding:12px 0;text-align:center;}
+
+/* pending dot on nav button */
+.pending-dot{display:inline-block;width:7px;height:7px;background:#f59e0b;border-radius:50%;margin-left:4px;vertical-align:middle;}
 
 /* ===== NO DATA ===== */
 .no-data{background:var(--s2);border:1px dashed #ccc9be;border-radius:12px;padding:32px;text-align:center;color:var(--t3);margin-bottom:16px;}
@@ -191,17 +210,35 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       <p>กรุณาเข้าสู่ระบบเพื่อดูตารางเรียน</p>
     </div>
     <div id="loginError" class="login-error"></div>
+    <div id="loginSuccess" class="login-success"></div>
+
+    <!-- Login form -->
     <div class="login-form" id="loginForm">
       <div class="fg"><label>อีเมล</label><input type="email" id="loginEmail" placeholder="email@example.com"></div>
       <div class="fg"><label>รหัสผ่าน</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
       <div class="register-link">ยังไม่มีบัญชี? <a onclick="showRegister()">ลงทะเบียน</a></div>
     </div>
+
+    <!-- Register form -->
     <div class="login-form" id="registerForm" style="display:none;">
       <div class="fg"><label>อีเมล</label><input type="email" id="regEmail" placeholder="email@example.com"></div>
       <div class="fg"><label>รหัสผ่าน</label><input type="password" id="regPassword" placeholder="อย่างน้อย 6 ตัวอักษร"></div>
       <button class="login-btn" id="regBtn" onclick="doRegister()">ลงทะเบียน</button>
       <div class="register-link"><a onclick="showLogin()">← กลับไปเข้าสู่ระบบ</a></div>
+    </div>
+
+    <!-- Pending state -->
+    <div id="pendingCard" style="display:none;text-align:center;">
+      <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:8px;">รอการอนุมัติ</h2>
+      <p style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:14px;">
+        บัญชีของคุณกำลังรอการอนุมัติจากผู้ดูแลระบบ<br>
+        กรุณารอแล้วลองเข้าสู่ระบบใหม่อีกครั้ง
+      </p>
+      <div id="pendingEmailBadge" style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;display:inline-block;margin-bottom:20px;"></div>
+      <br>
+      <button class="pending-back" onclick="doLogout()">ออกจากระบบ</button>
     </div>
   </div>
 </div>
@@ -214,7 +251,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       <button class="nb active" onclick="showTab('schedule',this)">ตารางเรียน</button>
       <button class="nb" onclick="showTab('summary',this)">สรุปรายเดือน</button>
       <button class="nb" onclick="showTab('heatmap',this)">จำนวนต่อช่วง</button>
-      <button class="nb" id="adminTabBtn" style="display:none" onclick="showTab('admin',this)">⚙️ จัดการผู้ใช้</button>
+      <button class="nb" id="adminTabBtn" style="display:none" onclick="showTab('admin',this)">⚙️ จัดการผู้ใช้<span id="pendingDot" class="pending-dot" style="display:none;"></span></button>
     </nav>
     <div class="topbar-right">
       <div class="user-badge">
@@ -262,12 +299,19 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       </div>
       <div class="tc" id="tab-admin">
         <div class="sh"><h2>⚙️ จัดการผู้ใช้ที่มีสิทธิ์เข้าถึง</h2></div>
+
+        <!-- Pending requests -->
+        <div id="pendingSection" class="pending-section-card" style="display:none;">
+          <h3>⏳ รออนุมัติ <span id="pendingCountBadge" class="pending-badge-label"></span></h3>
+          <div id="pendingList"></div>
+        </div>
+
         <div class="admin-grid">
           <div class="admin-card">
             <h3>👥 ผู้ใช้ที่มีสิทธิ์</h3>
             <div id="usersList"></div>
             <div class="add-user-form">
-              <input type="email" id="newUserEmail" placeholder="email@example.com">
+              <input type="email" id="newUserEmail" placeholder="เพิ่ม email โดยตรง">
               <select id="newUserRole">
                 <option value="viewer">Viewer</option>
                 <option value="admin">Admin</option>
@@ -277,12 +321,14 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
           </div>
           <div class="admin-card">
             <h3>📋 คำอธิบายสิทธิ์</h3>
-            <div style="font-size:13px;color:var(--t2);line-height:1.8;">
-              <p><span class="role-badge role-admin">Admin</span> — เข้าถึงทุกอย่าง แก้ไขข้อมูลได้ Import CSV ได้ จัดการผู้ใช้ได้</p>
+            <div style="font-size:13px;color:var(--t2);line-height:1.9;">
+              <p><span class="role-badge role-admin">Admin</span> — เข้าถึงทุกอย่าง แก้ไข Import CSV จัดการผู้ใช้ได้</p>
               <br>
-              <p><span class="role-badge role-viewer">Viewer</span> — ดูตารางเรียนและสถิติได้ แต่แก้ไขข้อมูลไม่ได้</p>
+              <p><span class="role-badge role-viewer">Viewer</span> — ดูตารางเรียนและสถิติได้ แต่แก้ไขไม่ได้</p>
               <br>
-              <p style="color:var(--t3);font-size:12px;">* ผู้ใช้ต้องลงทะเบียนด้วย email ที่อยู่ในรายการนี้เท่านั้น จึงจะเข้าสู่ระบบได้</p>
+              <p><span class="role-badge" style="background:#fef9c3;color:#854d0e;">Pending</span> — ลงทะเบียนแล้ว รอ Admin อนุมัติก่อนใช้งาน</p>
+              <br>
+              <p style="color:var(--t3);font-size:12px;">* ผู้ใช้ลงทะเบียนเองได้จากหน้า Login แล้วรอ Admin อนุมัติ</p>
             </div>
           </div>
         </div>
@@ -389,20 +435,41 @@ async function init(){
 
 async function onLogin(user){
   currentUser=user;
-  // Check allowed_users
   const{data,error}=await sb.from('allowed_users').select('role').eq('email',user.email).single();
+
   if(error||!data){
+    // Not in allowed_users — sign out (they registered but somehow no record)
     await sb.auth.signOut();
     showLoading(false);
     showPage('login');
     showLoginError('อีเมลนี้ไม่มีสิทธิ์เข้าถึงระบบ กรุณาติดต่อผู้ดูแล');
     return;
   }
+
+  if(data.role==='pending'){
+    showLoading(false);
+    showPendingState(user.email);
+    return;
+  }
+
   userRole=data.role;
   setupUI();
   await loadData();
   showLoading(false);
   showPage('app');
+}
+
+function showPendingState(email){
+  // Show pending UI inside login card
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('appPage').classList.remove('show');
+  document.getElementById('loadingOverlay').style.display='none';
+  document.getElementById('loginForm').style.display='none';
+  document.getElementById('registerForm').style.display='none';
+  document.getElementById('pendingCard').style.display='block';
+  document.getElementById('pendingEmailBadge').textContent=email;
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('loginSuccess').classList.remove('show');
 }
 
 function setupUI(){
@@ -420,10 +487,8 @@ function setupUI(){
 // ============================================================
 async function loadData(){
   showLoading(true);
-  // Load students
   const{data:sData}=await sb.from('students').select('*').order('id');
   students=sData||[];
-  // Load schedules for current month
   await loadSchedulesForMonth(curY,curM);
   showLoading(false);
   renderAll();
@@ -433,7 +498,6 @@ async function loadSchedulesForMonth(y,m){
   const start=`${y}-${String(m+1).padStart(2,'0')}-01`;
   const end=`${y}-${String(m+1).padStart(2,'0')}-31`;
   const{data}=await sb.from('schedules').select('*').gte('iso_date',start).lte('iso_date',end);
-  // Merge into students
   const schMap={};
   (data||[]).forEach(r=>{
     if(!schMap[r.student_id])schMap[r.student_id]={};
@@ -456,6 +520,7 @@ async function doLogin(){
   document.getElementById('loginBtn').disabled=false;
   document.getElementById('loginBtn').textContent='เข้าสู่ระบบ';
   if(error)showLoginError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+  // onAuthStateChange will handle the rest (including pending check)
 }
 
 async function doRegister(){
@@ -465,39 +530,73 @@ async function doRegister(){
   if(pw.length<6){showLoginError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   document.getElementById('regBtn').disabled=true;
   document.getElementById('regBtn').textContent='กำลังลงทะเบียน...';
-  // Try to sign up directly — onLogin will check allowed_users
-  const{error}=await sb.auth.signUp({email,password:pw});
+
+  // Check if email already in allowed_users with a real role (not pending)
+  const{data:existing}=await sb.from('allowed_users').select('role').eq('email',email).single();
+  if(existing && existing.role!=='pending'){
+    document.getElementById('regBtn').disabled=false;
+    document.getElementById('regBtn').textContent='ลงทะเบียน';
+    showLogin();
+    showLoginSuccess('บัญชีนี้ได้รับอนุมัติแล้ว กรุณาเข้าสู่ระบบ');
+    return;
+  }
+  if(existing && existing.role==='pending'){
+    document.getElementById('regBtn').disabled=false;
+    document.getElementById('regBtn').textContent='ลงทะเบียน';
+    showLogin();
+    showLoginSuccess('คุณลงทะเบียนแล้ว กรุณารอการอนุมัติจาก Admin');
+    return;
+  }
+
+  // Sign up in Supabase Auth
+  const{error:authError}=await sb.auth.signUp({email,password:pw});
+  if(authError){
+    document.getElementById('regBtn').disabled=false;
+    document.getElementById('regBtn').textContent='ลงทะเบียน';
+    if(authError.message.includes('already registered'))
+      showLoginError('อีเมลนี้ลงทะเบียนแล้ว กรุณาเข้าสู่ระบบ');
+    else showLoginError(authError.message);
+    return;
+  }
+
+  // Insert into allowed_users as pending
+  await sb.from('allowed_users').insert({email,role:'pending'});
+
   document.getElementById('regBtn').disabled=false;
   document.getElementById('regBtn').textContent='ลงทะเบียน';
-  if(error){
-    if(error.message.includes('already registered'))
-      showLoginError('อีเมลนี้ลงทะเบียนแล้ว กรุณาเข้าสู่ระบบ');
-    else showLoginError(error.message);
-  } else {
-    showLogin();
-    showLoginError('');
-    showToast('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ');
-  }
+  showLogin();
+  showLoginSuccess('ลงทะเบียนสำเร็จ! 🎉 กรุณารอการอนุมัติจาก Admin ก่อนเข้าสู่ระบบ');
 }
 
 async function doLogout(){
   await sb.auth.signOut();
+  currentUser=null; userRole=null;
+  document.getElementById('pendingCard').style.display='none';
+  showLogin();
   showPage('login');
 }
 
 function showLoginError(msg){
   const el=document.getElementById('loginError');
   el.textContent=msg;el.classList.toggle('show',!!msg);
+  document.getElementById('loginSuccess').classList.remove('show');
+}
+function showLoginSuccess(msg){
+  const el=document.getElementById('loginSuccess');
+  el.textContent=msg;el.classList.toggle('show',!!msg);
+  document.getElementById('loginError').classList.remove('show');
 }
 function showLogin(){
   document.getElementById('loginForm').style.display='';
   document.getElementById('registerForm').style.display='none';
-  showLoginError('');
+  document.getElementById('pendingCard').style.display='none';
+  showLoginError('');showLoginSuccess('');
 }
 function showRegister(){
   document.getElementById('loginForm').style.display='none';
   document.getElementById('registerForm').style.display='';
-  showLoginError('');
+  document.getElementById('pendingCard').style.display='none';
+  showLoginError('');showLoginSuccess('');
 }
 
 // ============================================================
@@ -599,7 +698,6 @@ function renderSchedule(){
 function renderSummary(){
   const prefix=`${curY}-${String(curM+1).padStart(2,'0')}-`;
   const classDays=getClassDays(curY,curM);
-  const dm={};classDays.forEach(d=>{dm[d.date]=d.dayTh;});
   const active=students.filter(s=>Object.keys(s.schedule||{}).some(k=>k.startsWith(prefix)));
   if(!active.length){document.getElementById('summaryGrid').innerHTML=`<div class="no-data" style="grid-column:1/-1"><strong>ยังไม่มีข้อมูลเดือนนี้</strong></div>`;return;}
   document.getElementById('summaryGrid').innerHTML=active.map((s,i)=>{
@@ -645,22 +743,73 @@ function renderHeatmap(){
   document.getElementById('hmStats').innerHTML=sh+'</div>';
 }
 
+// ============================================================
+// ADMIN — USER MANAGEMENT
+// ============================================================
 async function renderAdmin(){
   const{data}=await sb.from('allowed_users').select('*').order('created_at');
   const users=data||[];
-  document.getElementById('usersList').innerHTML=users.map(u=>`
-    <div class="user-row">
-      <span class="user-email">${u.email}</span>
-      <span class="user-role ${u.role==='admin'?'role-admin':'role-viewer'}">${u.role}</span>
-      ${u.email!==currentUser.email?`<button class="remove-btn" onclick="removeUser('${u.email}')">ลบ</button>`:'<span style="font-size:11px;color:var(--t3);">(คุณ)</span>'}
-    </div>`).join('');
+  const pending=users.filter(u=>u.role==='pending');
+  const active=users.filter(u=>u.role!=='pending');
+
+  // Pending dot on nav
+  document.getElementById('pendingDot').style.display=pending.length>0?'inline-block':'none';
+
+  // Pending section
+  const pendingSection=document.getElementById('pendingSection');
+  if(pending.length>0){
+    pendingSection.style.display='block';
+    document.getElementById('pendingCountBadge').textContent=`${pending.length} คน`;
+    document.getElementById('pendingList').innerHTML=pending.map(u=>{
+      const safeId='r'+Math.abs(u.email.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
+      return`<div class="user-row">
+        <span class="user-email">${u.email}</span>
+        <span class="user-date">${u.created_at?new Date(u.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short'}):'—'}</span>
+        <select class="approve-role-select" id="sel-${safeId}">
+          <option value="viewer">Viewer</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button class="approve-btn" onclick="approveUser('${u.email}','sel-${safeId}')">✓ อนุมัติ</button>
+        <button class="reject-btn" onclick="rejectUser('${u.email}')">✕ ปฏิเสธ</button>
+      </div>`;
+    }).join('');
+  } else {
+    pendingSection.style.display='none';
+  }
+
+  // Active users
+  document.getElementById('usersList').innerHTML=active.length
+    ? active.map(u=>`
+      <div class="user-row">
+        <span class="user-email">${u.email}</span>
+        <span class="user-role ${u.role==='admin'?'role-admin':'role-viewer'}">${u.role}</span>
+        ${u.email!==currentUser.email
+          ?`<button class="remove-btn" onclick="removeUser('${u.email}')">ลบ</button>`
+          :'<span style="font-size:11px;color:var(--t3);">(คุณ)</span>'}
+      </div>`).join('')
+    : '<div class="empty-state">ยังไม่มีผู้ใช้ที่อนุมัติแล้ว</div>';
+}
+
+async function approveUser(email, selId){
+  const role=document.getElementById(selId)?.value||'viewer';
+  const{error}=await sb.from('allowed_users').update({role}).eq('email',email);
+  if(error){showToast('เกิดข้อผิดพลาด: '+error.message);return;}
+  showToast(`อนุมัติ ${email} เป็น ${role} แล้ว ✓`);
+  renderAdmin();
+}
+
+async function rejectUser(email){
+  if(!confirm(`ปฏิเสธ ${email}?\nผู้ใช้นี้จะไม่สามารถเข้าระบบได้`))return;
+  await sb.from('allowed_users').delete().eq('email',email);
+  showToast('ปฏิเสธแล้ว');
+  renderAdmin();
 }
 
 async function addUser(){
   const email=document.getElementById('newUserEmail').value.trim();
   const role=document.getElementById('newUserRole').value;
   if(!email){showToast('กรุณากรอก email');return;}
-  const{error}=await sb.from('allowed_users').insert({email,role});
+  const{error}=await sb.from('allowed_users').upsert({email,role},{onConflict:'email'});
   if(error){showToast('เพิ่มไม่ได้: '+error.message);return;}
   document.getElementById('newUserEmail').value='';
   showToast('เพิ่มผู้ใช้แล้ว ✓');
@@ -736,7 +885,6 @@ async function saveStudent(){
   showLoading(true);
   if(editingStudentId){
     await sb.from('students').update({name,nick,grade,paid}).eq('id',editingStudentId);
-    // Update schedules: delete old for this month, insert new
     const prefix=`${curY}-${String(curM+1).padStart(2,'0')}-`;
     await sb.from('schedules').delete().eq('student_id',editingStudentId).gte('iso_date',prefix+'01').lte('iso_date',prefix+'31');
     for(const[iso,slots] of Object.entries(schedule)){
@@ -863,7 +1011,6 @@ async function confirmImport(){
   let added=0,updated=0;
   for(const p of ps){
     if(!Object.keys(p.schedule).length)continue;
-    // Find existing student
     let existing=students.find(s=>s.name===p.name&&s.nick===p.nick)||students.find(s=>s.nick===p.nick);
     let sid;
     if(existing){
@@ -875,9 +1022,7 @@ async function confirmImport(){
       sid=data?.id;added++;
     }
     if(!sid)continue;
-    // Delete old schedules for this month
     await sb.from('schedules').delete().eq('student_id',sid).gte('iso_date',prefix+'01').lte('iso_date',prefix+'31');
-    // Insert new
     for(const[iso,slots] of Object.entries(p.schedule)){
       await sb.from('schedules').insert({student_id:sid,iso_date:iso,slots});
     }
