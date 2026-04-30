@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตารางเรียน HB</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#f7f6f2;--s:#fff;--s2:#f0efe9;--bd:#e2e0d8;--t:#1a1916;--t2:#6b6960;--t3:#9e9b90;--ac:#2563a8;--acl:#e8f0fb;--ac2:#0e7c5a;--pu:#5b21b6;--wa:#b45309;--danger:#9b1c1c;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-size:15px;}
+
+/* ===== LOGIN PAGE ===== */
+.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+.login-card{background:var(--s);border:1px solid var(--bd);border-radius:20px;padding:40px;width:380px;max-width:95vw;box-shadow:0 4px 24px rgba(0,0,0,.06);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo .logo-text{font-size:26px;font-weight:700;letter-spacing:-.5px;}
+.login-logo .logo-text span{color:var(--ac);}
+.login-logo p{font-size:13px;color:var(--t3);margin-top:4px;}
+.login-form .fg{margin-bottom:14px;}
+.login-form label{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:5px;display:block;}
+.login-form input{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;font-family:'Sarabun',sans-serif;font-size:14px;outline:none;background:var(--bg);color:var(--t);transition:border-color .15s;}
+.login-form input:focus{border-color:var(--ac);background:var(--s);}
+.login-btn{width:100%;padding:11px;border-radius:10px;border:none;background:var(--ac);color:#fff;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:6px;}
+.login-btn:hover{background:#1d53a0;}
+.login-btn:disabled{background:#93afd4;cursor:not-allowed;}
+.login-error{background:#fee2e2;color:var(--danger);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:14px;display:none;}
+.login-error.show{display:block;}
+.login-divider{text-align:center;font-size:12px;color:var(--t3);margin:16px 0;}
+.register-link{text-align:center;font-size:13px;color:var(--t2);margin-top:14px;}
+.register-link a{color:var(--ac);cursor:pointer;text-decoration:underline;}
+
+/* ===== APP ===== */
+.app-page{display:none;flex-direction:column;min-height:100vh;}
+.app-page.show{display:flex;}
+.topbar{background:var(--s);border-bottom:1px solid var(--bd);padding:0 20px;display:flex;align-items:center;height:54px;position:sticky;top:0;z-index:100;}
+.logo{font-weight:700;font-size:16px;letter-spacing:-.3px;}.logo span{color:var(--ac);}
+.nav{display:flex;margin-left:20px;gap:2px;}
+.nb{padding:5px 12px;border-radius:8px;border:none;background:none;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:500;color:var(--t2);transition:all .15s;}
+.nb:hover{background:var(--s2);color:var(--t);}.nb.active{background:var(--acl);color:var(--ac);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.user-badge{font-size:12px;color:var(--t3);background:var(--s2);padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:6px;}
+.role-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;}
+.role-admin{background:#dbeafe;color:#1e40af;}
+.role-viewer{background:#d1fae5;color:#065f46;}
+.logout-btn{padding:5px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--s);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--t2);transition:all .15s;}
+.logout-btn:hover{border-color:var(--danger);color:var(--danger);}
+.mn{display:flex;align-items:center;gap:5px;}
+.mb{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);background:var(--s);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.mb:hover{background:var(--s2);}
+.ml{font-weight:600;font-size:14px;min-width:135px;text-align:center;}
+.import-btn{padding:5px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--s);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:500;color:var(--t2);transition:all .15s;}
+.import-btn:hover{border-color:var(--ac);color:var(--ac);background:var(--acl);}
+
+/* ===== MAIN LAYOUT ===== */
+.main{display:flex;flex:1;}
+.sb{width:248px;flex-shrink:0;background:var(--s);border-right:1px solid var(--bd);padding:15px 12px;overflow-y:auto;height:calc(100vh - 54px);position:sticky;top:54px;}
+.ct{flex:1;padding:18px 22px;overflow-y:auto;}
+.sbt{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);margin-bottom:8px;}
+.sx{padding:7px 10px;border:1px solid var(--bd);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:13px;width:100%;margin-bottom:9px;outline:none;background:var(--bg);color:var(--t);}
+.sx:focus{border-color:var(--ac);background:var(--s);}
+.sl{display:flex;flex-direction:column;gap:1px;}
+.si{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:8px;cursor:pointer;transition:background .1s;}
+.si:hover{background:var(--s2);}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.sn{font-size:13px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sg{font-size:10px;color:var(--t3);}
+.sc{font-size:11px;font-weight:700;color:var(--ac);background:var(--acl);padding:1px 5px;border-radius:9px;flex-shrink:0;}
+.ab{width:100%;padding:7px;border-radius:8px;border:1px dashed #ccc9be;background:none;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--t3);display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;margin-top:8px;}
+.ab:hover{border-color:var(--ac);color:var(--ac);background:var(--acl);}
+
+/* ===== STATS ===== */
+.sr{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.sk{background:var(--s);border:1px solid var(--bd);border-radius:12px;padding:13px 15px;}
+.sl2{font-size:11px;color:var(--t3);margin-bottom:4px;font-weight:500;}
+.sv{font-size:22px;font-weight:700;letter-spacing:-.5px;line-height:1;}
+.ss{font-size:11px;color:var(--t2);margin-top:2px;}
+.sk.blue .sv{color:var(--ac);}.sk.green .sv{color:var(--ac2);}.sk.purple .sv{color:var(--pu);}.sk.amber .sv{color:var(--wa);}
+
+/* ===== TABS ===== */
+.tc{display:none;}.tc.active{display:block;}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sh h2{font-size:17px;font-weight:700;}
+.leg{display:flex;gap:10px;flex-wrap:wrap;}
+.li{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--t2);}
+.ld{width:10px;height:10px;border-radius:3px;}
+
+/* ===== SCHEDULE TABLE ===== */
+.sw{background:var(--s);border:1px solid var(--bd);border-radius:13px;overflow:auto;}
+.st{border-collapse:collapse;width:100%;min-width:500px;}
+.st th{background:var(--s2);font-size:12px;font-weight:600;color:var(--t2);padding:7px;text-align:center;border:1px solid var(--bd);white-space:nowrap;}
+.st td{border:1px solid var(--bd);padding:5px 6px;vertical-align:top;min-width:78px;}
+.tsl{background:var(--s2);font-size:11px;font-weight:700;color:var(--t2);text-align:center;min-width:105px;white-space:nowrap;}
+.dhn{font-size:17px;font-weight:700;color:var(--t);line-height:1.1;}
+.dhd{font-size:10px;color:var(--t3);}
+.chip{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600;margin:1px;cursor:pointer;white-space:nowrap;}
+.chip:hover{filter:brightness(.92);}
+.chip-M10{background:#dbeafe;color:#1e40af;}.chip-M13{background:#d1fae5;color:#065f46;}.chip-M15{background:#ede9fe;color:#4c1d95;}
+.cc{font-size:10px;color:var(--t3);margin-top:2px;}
+.ce{color:var(--t3);font-size:11px;text-align:center;padding:10px 0;}
+
+/* ===== SUMMARY ===== */
+.mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
+.mc{background:var(--s);border:1px solid var(--bd);border-radius:12px;padding:13px;}
+.mc:hover{box-shadow:0 2px 10px rgba(0,0,0,.06);}
+.mch{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.mca{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.mcn{font-weight:600;font-size:14px;}.mcg{font-size:11px;color:var(--t2);}
+.dt{display:flex;flex-wrap:wrap;gap:3px;}
+.dtg{padding:2px 7px;border-radius:6px;font-size:11px;font-weight:600;}
+.mf{margin-top:9px;padding-top:9px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;}
+.mt{font-weight:700;font-size:17px;color:var(--ac);}
+
+/* ===== HEATMAP ===== */
+.hw{background:var(--s);border:1px solid var(--bd);border-radius:13px;overflow:auto;margin-bottom:18px;}
+.ht{border-collapse:collapse;width:100%;min-width:500px;}
+.ht th{background:var(--s2);font-size:11px;font-weight:600;color:var(--t2);padding:7px 8px;border:1px solid var(--bd);text-align:center;white-space:nowrap;}
+.ht td{border:1px solid var(--bd);padding:10px 6px;text-align:center;font-weight:700;font-size:16px;}
+.ht td small{display:block;font-size:9px;font-weight:500;opacity:.8;margin-top:1px;}
+
+/* ===== ADMIN PANEL ===== */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.admin-card{background:var(--s);border:1px solid var(--bd);border-radius:12px;padding:16px;}
+.admin-card h3{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.user-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);}
+.user-row:last-child{border-bottom:none;}
+.user-email{flex:1;font-size:13px;}
+.user-role{font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;}
+.remove-btn{font-size:11px;color:var(--danger);background:#fee2e2;border:none;padding:2px 8px;border-radius:5px;cursor:pointer;}
+.remove-btn:hover{background:#fecaca;}
+.add-user-form{display:flex;gap:8px;margin-top:10px;}
+.add-user-form input{flex:1;padding:7px 10px;border:1px solid var(--bd);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:13px;outline:none;}
+.add-user-form input:focus{border-color:var(--ac);}
+.add-user-form select{padding:7px 10px;border:1px solid var(--bd);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:13px;outline:none;}
+.add-user-form button{padding:7px 14px;border-radius:8px;border:none;background:var(--ac);color:#fff;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+
+/* ===== NO DATA ===== */
+.no-data{background:var(--s2);border:1px dashed #ccc9be;border-radius:12px;padding:32px;text-align:center;color:var(--t3);margin-bottom:16px;}
+.no-data strong{display:block;font-size:16px;font-weight:600;color:var(--t2);margin-bottom:6px;}
+
+/* ===== MODAL ===== */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
+.ov.open{opacity:1;pointer-events:all;}
+.mo{background:var(--s);border-radius:15px;padding:20px;width:520px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.15);transform:translateY(6px);transition:transform .2s;}
+.ov.open .mo{transform:translateY(0);}
+.moti{font-size:17px;font-weight:700;margin-bottom:16px;}
+.fg{margin-bottom:12px;}.fl{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:4px;display:block;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fi{width:100%;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:14px;background:var(--s);color:var(--t);outline:none;transition:border-color .15s;}
+.fi:focus{border-color:var(--ac);}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+.btn{padding:7px 17px;border-radius:8px;border:1px solid var(--bd);font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;}
+.bp{background:var(--ac);color:#fff;border-color:var(--ac);}.bp:hover{background:#1d53a0;}
+.bg2{background:none;color:var(--t2);}.bg2:hover{background:var(--s2);}
+.bd3{background:#fee2e2;color:var(--danger);border-color:#fee2e2;}.bd3:hover{background:#fecaca;}
+.smt{border-collapse:collapse;width:100%;font-size:12px;}
+.smt th{padding:5px 8px;text-align:center;background:var(--s2);border:1px solid var(--bd);font-size:11px;font-weight:600;color:var(--t2);}
+.smt td{padding:4px 8px;border:1px solid var(--bd);text-align:center;}
+.smt .tdate{text-align:left;font-weight:600;color:var(--t2);background:var(--s2);font-size:12px;}
+
+/* ===== IMPORT MODAL ===== */
+.drop-zone{border:2px dashed #ccc9be;border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);}
+.drop-zone:hover{border-color:var(--ac);background:var(--acl);}
+.import-preview{margin-top:14px;background:var(--s2);border-radius:8px;padding:12px;font-size:13px;}
+
+/* ===== LOADING ===== */
+.loading-overlay{position:fixed;inset:0;background:rgba(247,246,242,.85);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:12px;}
+.spinner{width:36px;height:36px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:14px;color:var(--t2);font-weight:500;}
+
+.toast{position:fixed;bottom:18px;right:18px;background:var(--t);color:#fff;padding:9px 16px;border-radius:9px;font-size:14px;font-weight:500;z-index:9999;opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.a0{background:#dbeafe;color:#1e40af;}.a1{background:#d1fae5;color:#065f46;}.a2{background:#ede9fe;color:#4c1d95;}.a3{background:#fef3c7;color:#92400e;}.a4{background:#fee2e2;color:#9b1c1c;}.a5{background:#fce7f3;color:#9d174d;}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">กำลังโหลด...</div>
+</div>
+
+<!-- Login Page -->
+<div class="login-page" id="loginPage" style="display:none;">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-text">ตารางเรียน<span>HB</span></div>
+      <p>กรุณาเข้าสู่ระบบเพื่อดูตารางเรียน</p>
+    </div>
+    <div id="loginError" class="login-error"></div>
+    <div class="login-form" id="loginForm">
+      <div class="fg"><label>อีเมล</label><input type="email" id="loginEmail" placeholder="email@example.com"></div>
+      <div class="fg"><label>รหัสผ่าน</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+      <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
+      <div class="register-link">ยังไม่มีบัญชี? <a onclick="showRegister()">ลงทะเบียน</a></div>
+    </div>
+    <div class="login-form" id="registerForm" style="display:none;">
+      <div class="fg"><label>อีเมล</label><input type="email" id="regEmail" placeholder="email@example.com"></div>
+      <div class="fg"><label>รหัสผ่าน</label><input type="password" id="regPassword" placeholder="อย่างน้อย 6 ตัวอักษร"></div>
+      <button class="login-btn" id="regBtn" onclick="doRegister()">ลงทะเบียน</button>
+      <div class="register-link"><a onclick="showLogin()">← กลับไปเข้าสู่ระบบ</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- App Page -->
+<div class="app-page" id="appPage">
+  <div class="topbar">
+    <div class="logo">ตารางเรียน<span>HB</span></div>
+    <nav class="nav">
+      <button class="nb active" onclick="showTab('schedule',this)">ตารางเรียน</button>
+      <button class="nb" onclick="showTab('summary',this)">สรุปรายเดือน</button>
+      <button class="nb" onclick="showTab('heatmap',this)">จำนวนต่อช่วง</button>
+      <button class="nb" id="adminTabBtn" style="display:none" onclick="showTab('admin',this)">⚙️ จัดการผู้ใช้</button>
+    </nav>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <span id="userEmailLabel"></span>
+        <span class="role-badge" id="userRoleLabel"></span>
+      </div>
+      <button class="import-btn" id="importBtnTop" style="display:none" onclick="openImport()">↑ Import CSV</button>
+      <div class="mn">
+        <button class="mb" onclick="changeMonth(-1)">‹</button>
+        <div class="ml" id="monthLabel"></div>
+        <button class="mb" onclick="changeMonth(1)">›</button>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">ออกจากระบบ</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="sb">
+      <div class="sbt">นักเรียน (<span id="sideCnt">0</span>)</div>
+      <input class="sx" type="text" placeholder="ค้นหาชื่อ..." oninput="filterStudents(this.value)">
+      <div class="sl" id="studentList"></div>
+      <button class="ab" id="addStudentBtn" style="display:none" onclick="openAdd()">+ เพิ่มนักเรียน</button>
+    </div>
+    <div class="ct">
+      <div class="sr" id="statsRow"></div>
+      <div class="tc active" id="tab-schedule">
+        <div class="sh">
+          <h2>ตารางเรียนรายวัน</h2>
+          <div class="leg">
+            <div class="li"><div class="ld" style="background:#bfdbfe"></div>M10 (10:00–12:00)</div>
+            <div class="li"><div class="ld" style="background:#a7f3d0"></div>M13 (13:00–15:00)</div>
+            <div class="li"><div class="ld" style="background:#ddd6fe"></div>M15 (15:00–17:00)</div>
+          </div>
+        </div>
+        <div id="schedWrap"></div>
+      </div>
+      <div class="tc" id="tab-summary">
+        <div class="sh"><h2>สรุปรายเดือน — รายคน</h2></div>
+        <div class="mg" id="summaryGrid"></div>
+      </div>
+      <div class="tc" id="tab-heatmap">
+        <div class="sh"><h2>จำนวนนักเรียนต่อช่วงเวลา</h2></div>
+        <div id="hmWrap"></div>
+        <div id="hmStats" style="margin-top:16px;"></div>
+      </div>
+      <div class="tc" id="tab-admin">
+        <div class="sh"><h2>⚙️ จัดการผู้ใช้ที่มีสิทธิ์เข้าถึง</h2></div>
+        <div class="admin-grid">
+          <div class="admin-card">
+            <h3>👥 ผู้ใช้ที่มีสิทธิ์</h3>
+            <div id="usersList"></div>
+            <div class="add-user-form">
+              <input type="email" id="newUserEmail" placeholder="email@example.com">
+              <select id="newUserRole">
+                <option value="viewer">Viewer</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button onclick="addUser()">เพิ่ม</button>
+            </div>
+          </div>
+          <div class="admin-card">
+            <h3>📋 คำอธิบายสิทธิ์</h3>
+            <div style="font-size:13px;color:var(--t2);line-height:1.8;">
+              <p><span class="role-badge role-admin">Admin</span> — เข้าถึงทุกอย่าง แก้ไขข้อมูลได้ Import CSV ได้ จัดการผู้ใช้ได้</p>
+              <br>
+              <p><span class="role-badge role-viewer">Viewer</span> — ดูตารางเรียนและสถิติได้ แต่แก้ไขข้อมูลไม่ได้</p>
+              <br>
+              <p style="color:var(--t3);font-size:12px;">* ผู้ใช้ต้องลงทะเบียนด้วย email ที่อยู่ในรายการนี้เท่านั้น จึงจะเข้าสู่ระบบได้</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Student Modal -->
+<div class="ov" id="studentOv" onclick="if(event.target===this)closeModal('studentOv')">
+<div class="mo">
+  <div class="moti" id="modalTitle">เพิ่มนักเรียน</div>
+  <div class="fr">
+    <div class="fg"><label class="fl">ชื่อ</label><input class="fi" id="inp-name" placeholder="ชื่อจริง"></div>
+    <div class="fg"><label class="fl">ชื่อเล่น</label><input class="fi" id="inp-nick" placeholder="ชื่อเล่น"></div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label class="fl">ระดับชั้น</label>
+      <select class="fi" id="inp-grade"><option>ป.4</option><option>ป.5</option><option>ป.6</option><option>ม.1</option><option>ม.2</option><option>ม.3</option><option>ม.4</option><option selected>ม.5</option><option>ม.6</option></select>
+    </div>
+    <div class="fg"><label class="fl">สถานะ</label>
+      <select class="fi" id="inp-paid"><option value="false">ยังไม่ชำระ</option><option value="true">ชำระแล้ว</option></select>
+    </div>
+  </div>
+  <div class="fg">
+    <label class="fl">ตารางเรียนเดือนนี้</label>
+    <div id="modalSchedGrid" style="max-height:290px;overflow-y:auto;border:1px solid var(--bd);border-radius:8px;"></div>
+  </div>
+  <div class="ma">
+    <button class="btn bd3" id="deleteBtn" style="display:none" onclick="deleteStudent()">ลบ</button>
+    <button class="btn bg2" onclick="closeModal('studentOv')">ยกเลิก</button>
+    <button class="btn bp" onclick="saveStudent()">บันทึก</button>
+  </div>
+</div>
+</div>
+
+<!-- Import Modal -->
+<div class="ov" id="importOv" onclick="if(event.target===this)closeModal('importOv')">
+<div class="mo">
+  <div class="moti">Import CSV เดือนใหม่</div>
+  <p style="font-size:13px;color:var(--t2);margin-bottom:14px;">อัปโหลด CSV จาก Google Sheet — ระบบจะ merge ข้อมูลเข้ากับเดือนที่เลือก โดยไม่ลบข้อมูลเดือนอื่น</p>
+  <div class="drop-zone" onclick="document.getElementById('csvFile').click()" ondragover="event.preventDefault()" ondrop="event.preventDefault();handleDrop(event)">
+    <div style="font-size:28px;">📄</div>
+    <p style="color:var(--t2);font-size:14px;margin-top:8px;">คลิกเพื่อเลือกไฟล์ หรือลาก CSV มาวาง</p>
+  </div>
+  <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="handleFileSelect(event)">
+  <div id="importPreview" style="display:none;" class="import-preview">
+    <strong id="importTitle"></strong>
+    <div id="importDetails"></div>
+  </div>
+  <div class="ma">
+    <button class="btn bg2" onclick="closeModal('importOv')">ยกเลิก</button>
+    <button class="btn bp" id="importConfirmBtn" style="display:none" onclick="confirmImport()">✓ Import</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://zpsarnenawaxmhkgjwwg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpwc2FybmVuYXdheG1oa2dqd3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MjM4NjksImV4cCI6MjA5MzA5OTg2OX0.0Rxlksks6V0gjfwOY2Ld-qB-bySMVPZcyyb3bqT9lt8';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+const THMO=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const DTH={0:'อา',1:'จ',2:'อ',3:'พ',4:'พฤ',5:'ศ',6:'ส'};
+const CDOW=[0,3,5,6];
+const SLOTS=['M10','M13','M15'];
+const SLB={M10:'10:00–12:00',M13:'13:00–15:00',M15:'15:00–17:00'};
+const SLOT_SET=new Set(SLOTS);
+
+// ============================================================
+// STATE
+// ============================================================
+let currentUser=null, userRole=null;
+let students=[], schedules=[];
+let curY=2026, curM=2;
+let editingStudentId=null, filterTxt='';
+let pendingImport=null;
+
+// ============================================================
+// INIT
+// ============================================================
+async function init(){
+  showLoading(true);
+  const{data:{session}}=await sb.auth.getSession();
+  if(session){
+    await onLogin(session.user);
+  } else {
+    showLoading(false);
+    showPage('login');
+  }
+  sb.auth.onAuthStateChange(async(_,session)=>{
+    if(session) await onLogin(session.user);
+    else { currentUser=null; userRole=null; showPage('login'); }
+  });
+}
+
+async function onLogin(user){
+  currentUser=user;
+  // Check allowed_users
+  const{data,error}=await sb.from('allowed_users').select('role').eq('email',user.email).single();
+  if(error||!data){
+    await sb.auth.signOut();
+    showLoading(false);
+    showPage('login');
+    showLoginError('อีเมลนี้ไม่มีสิทธิ์เข้าถึงระบบ กรุณาติดต่อผู้ดูแล');
+    return;
+  }
+  userRole=data.role;
+  setupUI();
+  await loadData();
+  showLoading(false);
+  showPage('app');
+}
+
+function setupUI(){
+  document.getElementById('userEmailLabel').textContent=currentUser.email;
+  const rb=document.getElementById('userRoleLabel');
+  rb.textContent=userRole==='admin'?'Admin':'Viewer';
+  rb.className='role-badge '+(userRole==='admin'?'role-admin':'role-viewer');
+  document.getElementById('adminTabBtn').style.display=userRole==='admin'?'':'none';
+  document.getElementById('importBtnTop').style.display=userRole==='admin'?'':'none';
+  document.getElementById('addStudentBtn').style.display=userRole==='admin'?'':'none';
+}
+
+// ============================================================
+// DATA LOADING
+// ============================================================
+async function loadData(){
+  showLoading(true);
+  // Load students
+  const{data:sData}=await sb.from('students').select('*').order('id');
+  students=sData||[];
+  // Load schedules for current month
+  await loadSchedulesForMonth(curY,curM);
+  showLoading(false);
+  renderAll();
+}
+
+async function loadSchedulesForMonth(y,m){
+  const start=`${y}-${String(m+1).padStart(2,'0')}-01`;
+  const end=`${y}-${String(m+1).padStart(2,'0')}-31`;
+  const{data}=await sb.from('schedules').select('*').gte('iso_date',start).lte('iso_date',end);
+  // Merge into students
+  const schMap={};
+  (data||[]).forEach(r=>{
+    if(!schMap[r.student_id])schMap[r.student_id]={};
+    schMap[r.student_id][r.iso_date]=r.slots;
+  });
+  students.forEach(s=>{s.schedule=schMap[s.id]||{};});
+  schedules=data||[];
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pw=document.getElementById('loginPassword').value;
+  if(!email||!pw){showLoginError('กรุณากรอกอีเมลและรหัสผ่าน');return;}
+  document.getElementById('loginBtn').disabled=true;
+  document.getElementById('loginBtn').textContent='กำลังเข้าสู่ระบบ...';
+  const{error}=await sb.auth.signInWithPassword({email,password:pw});
+  document.getElementById('loginBtn').disabled=false;
+  document.getElementById('loginBtn').textContent='เข้าสู่ระบบ';
+  if(error)showLoginError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+}
+
+async function doRegister(){
+  const email=document.getElementById('regEmail').value.trim();
+  const pw=document.getElementById('regPassword').value;
+  if(!email||!pw){showLoginError('กรุณากรอกอีเมลและรหัสผ่าน');return;}
+  if(pw.length<6){showLoginError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');return;}
+  document.getElementById('regBtn').disabled=true;
+  document.getElementById('regBtn').textContent='กำลังลงทะเบียน...';
+  // Try to sign up directly — onLogin will check allowed_users
+  const{error}=await sb.auth.signUp({email,password:pw});
+  document.getElementById('regBtn').disabled=false;
+  document.getElementById('regBtn').textContent='ลงทะเบียน';
+  if(error){
+    if(error.message.includes('already registered'))
+      showLoginError('อีเมลนี้ลงทะเบียนแล้ว กรุณาเข้าสู่ระบบ');
+    else showLoginError(error.message);
+  } else {
+    showLogin();
+    showLoginError('');
+    showToast('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ');
+  }
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  showPage('login');
+}
+
+function showLoginError(msg){
+  const el=document.getElementById('loginError');
+  el.textContent=msg;el.classList.toggle('show',!!msg);
+}
+function showLogin(){
+  document.getElementById('loginForm').style.display='';
+  document.getElementById('registerForm').style.display='none';
+  showLoginError('');
+}
+function showRegister(){
+  document.getElementById('loginForm').style.display='none';
+  document.getElementById('registerForm').style.display='';
+  showLoginError('');
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function isoDate(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function getClassDays(y,m){
+  const r=[];const d=new Date(y,m,1);
+  while(d.getMonth()===m){
+    if(CDOW.includes(d.getDay()))r.push({iso:isoDate(y,m,d.getDate()),date:d.getDate(),dow:d.getDay(),dayTh:DTH[d.getDay()]});
+    d.setDate(d.getDate()+1);
+  }
+  return r;
+}
+function getSlots(s,iso){return(s.schedule||{})[iso]||[];}
+function totalInMonth(s,y,m){
+  const prefix=`${y}-${String(m+1).padStart(2,'0')}-`;
+  return Object.entries(s.schedule||{}).filter(([k])=>k.startsWith(prefix)).reduce((n,[,sl])=>n+sl.length,0);
+}
+function avC(i){return'a'+(i%6);}
+function ini(s){return(s.nick||s.name||'?').charAt(0).toUpperCase();}
+function showLoading(v){document.getElementById('loadingOverlay').style.display=v?'flex':'none';}
+function showPage(p){
+  document.getElementById('loginPage').style.display=p==='login'?'flex':'none';
+  document.getElementById('appPage').classList.toggle('show',p==='app');
+  document.getElementById('loadingOverlay').style.display='none';
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderAll(){
+  document.getElementById('monthLabel').textContent=THMO[curM]+' '+(curY+543);
+  renderStats();renderSidebar();
+  const t=document.querySelector('.tc.active');
+  if(t?.id==='tab-schedule')renderSchedule();
+  else if(t?.id==='tab-summary')renderSummary();
+  else if(t?.id==='tab-heatmap')renderHeatmap();
+  else if(t?.id==='tab-admin')renderAdmin();
+}
+
+function renderStats(){
+  const prefix=`${curY}-${String(curM+1).padStart(2,'0')}-`;
+  const tot=students.reduce((s,st)=>s+totalInMonth(st,curY,curM),0);
+  const active=students.filter(s=>Object.keys(s.schedule||{}).some(k=>k.startsWith(prefix))).length;
+  const days=getClassDays(curY,curM);
+  document.getElementById('statsRow').innerHTML=`
+    <div class="sk blue"><div class="sl2">นักเรียนทั้งหมด</div><div class="sv">${students.length}</div><div class="ss">คน</div></div>
+    <div class="sk green"><div class="sl2">มีตารางเดือนนี้</div><div class="sv">${active}</div><div class="ss">คน</div></div>
+    <div class="sk purple"><div class="sl2">รวมรอบเดือนนี้</div><div class="sv">${tot}</div><div class="ss">ครั้ง</div></div>
+    <div class="sk amber"><div class="sl2">วันเรียนเดือนนี้</div><div class="sv">${days.length}</div><div class="ss">วัน</div></div>`;
+}
+
+function renderSidebar(){
+  const fil=students.filter(s=>!filterTxt||s.name.includes(filterTxt)||s.nick.includes(filterTxt));
+  document.getElementById('sideCnt').textContent=students.length;
+  document.getElementById('studentList').innerHTML=fil.map((s,i)=>{
+    const cnt=totalInMonth(s,curY,curM);
+    const clickable=userRole==='admin'?`onclick="openEdit(${s.id})"`:'';
+    return`<div class="si" ${clickable} style="${userRole!=='admin'?'cursor:default':''}">
+      <div class="av ${avC(i)}">${ini(s)}</div>
+      <div style="flex:1;min-width:0;"><div class="sn">${s.nick} <span style="color:var(--t3);font-weight:400;font-size:10px;">${s.name}</span></div><div class="sg">${s.grade}</div></div>
+      ${cnt>0?`<div class="sc">${cnt}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderSchedule(){
+  const classDays=getClassDays(curY,curM);
+  const hasData=classDays.some(d=>students.some(s=>SLOTS.some(sl=>getSlots(s,d.iso).includes(sl))));
+  if(!hasData){
+    document.getElementById('schedWrap').innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้</strong>${userRole==='admin'?'กด "Import CSV" เพื่อเพิ่มข้อมูล หรือคลิกชื่อนักเรียนเพื่อกรอกด้วยมือ':'รอ Admin เพิ่มข้อมูล'}</div>`;
+    return;
+  }
+  let h='<div class="sw"><table class="st"><thead><tr><th style="min-width:105px;">ช่วงเวลา</th>';
+  classDays.forEach(d=>{h+=`<th><div class="dhn">${d.date}</div><div class="dhd">${d.dayTh}</div></th>`;});
+  h+='</tr></thead><tbody>';
+  SLOTS.forEach(sl=>{
+    h+=`<tr><td class="tsl">${SLB[sl]}<br><span style="font-weight:400;font-size:10px;color:var(--t3);">(${sl})</span></td>`;
+    classDays.forEach(d=>{
+      const here=students.filter(s=>getSlots(s,d.iso).includes(sl));
+      h+=`<td><div>`;
+      if(!here.length){h+=`<div class="ce">—</div>`;}
+      else{
+        here.forEach(s=>{
+          const click=userRole==='admin'?`onclick="openEdit(${s.id})"`:'' ;
+          h+=`<span class="chip chip-${sl}" ${click} title="${s.name}">${s.nick}</span>`;
+        });
+        h+=`<div class="cc">${here.length} คน</div>`;
+      }
+      h+=`</div></td>`;
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  document.getElementById('schedWrap').innerHTML=h;
+}
+
+function renderSummary(){
+  const prefix=`${curY}-${String(curM+1).padStart(2,'0')}-`;
+  const classDays=getClassDays(curY,curM);
+  const dm={};classDays.forEach(d=>{dm[d.date]=d.dayTh;});
+  const active=students.filter(s=>Object.keys(s.schedule||{}).some(k=>k.startsWith(prefix)));
+  if(!active.length){document.getElementById('summaryGrid').innerHTML=`<div class="no-data" style="grid-column:1/-1"><strong>ยังไม่มีข้อมูลเดือนนี้</strong></div>`;return;}
+  document.getElementById('summaryGrid').innerHTML=active.map((s,i)=>{
+    const entries=Object.entries(s.schedule||{}).filter(([k])=>k.startsWith(prefix)).sort((a,b)=>a[0]>b[0]?1:-1);
+    const tot=entries.reduce((n,[,sl])=>n+sl.length,0);
+    const tags=entries.flatMap(([iso,slots])=>{
+      const d=parseInt(iso.split('-')[2]);const dow=new Date(...iso.split('-').map((v,i)=>i===1?v-1:+v)).getDay();
+      return slots.map(sl=>`<span class="dtg chip-${sl}">${DTH[dow]}${d} ${sl}</span>`);
+    }).join('');
+    return`<div class="mc"><div class="mch"><div class="mca ${avC(i)}">${ini(s)}</div>
+      <div><div class="mcn">${s.nick} <span style="font-weight:400;color:var(--t2);font-size:11px;">${s.name}</span></div><div class="mcg">${s.grade}</div></div></div>
+      <div class="dt">${tags||'<span style="color:var(--t3);font-size:11px;">ไม่มีตารางเดือนนี้</span>'}</div>
+      <div class="mf"><span style="color:var(--t2);font-size:12px;">รวมเดือนนี้</span><span class="mt">${tot} ครั้ง</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderHeatmap(){
+  const classDays=getClassDays(curY,curM);
+  const hasData=classDays.some(d=>students.some(s=>SLOTS.some(sl=>getSlots(s,d.iso).includes(sl))));
+  if(!hasData){document.getElementById('hmWrap').innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้</strong></div>`;document.getElementById('hmStats').innerHTML='';return;}
+  const cnts={};
+  classDays.forEach(d=>{cnts[d.iso]={};SLOTS.forEach(sl=>{cnts[d.iso][sl]=students.filter(s=>getSlots(s,d.iso).includes(sl)).length;});});
+  const mx=Math.max(...classDays.flatMap(d=>SLOTS.map(sl=>cnts[d.iso][sl])),1);
+  function bg(n){if(!n)return'var(--s2)';const r=n/mx;if(r<.25)return'#bfdbfe';if(r<.5)return'#93c5fd';if(r<.75)return'#60a5fa';return'#2563eb';}
+  function tc(n){return(n/mx)>.45?'#fff':'#1e40af';}
+  let h='<div class="hw"><table class="ht"><thead><tr><th>ช่วงเวลา</th>';
+  classDays.forEach(d=>{h+=`<th>${d.date}<br><span style="font-weight:400;">${d.dayTh}</span></th>`;});
+  h+='</tr></thead><tbody>';
+  SLOTS.forEach(sl=>{
+    h+=`<tr><th style="text-align:left;padding:7px 12px;white-space:nowrap;">${SLB[sl]}<br><span style="font-weight:400;font-size:10px;color:var(--t3);">(${sl})</span></th>`;
+    classDays.forEach(d=>{const n=cnts[d.iso][sl];h+=`<td style="background:${bg(n)};color:${tc(n)};">${n}<small>คน</small></td>`;});
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  document.getElementById('hmWrap').innerHTML=h;
+  let sh='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;">';
+  classDays.forEach(d=>{
+    const tot=SLOTS.reduce((s,sl)=>s+cnts[d.iso][sl],0);
+    const mx2=Math.max(...SLOTS.map(sl=>cnts[d.iso][sl]));
+    sh+=`<div class="sk blue" style="padding:10px 12px;"><div class="sl2">${d.dayTh} ${d.date}</div><div class="sv" style="font-size:19px;">${tot}</div><div class="ss">ครั้ง · max ${mx2}/slot</div></div>`;
+  });
+  document.getElementById('hmStats').innerHTML=sh+'</div>';
+}
+
+async function renderAdmin(){
+  const{data}=await sb.from('allowed_users').select('*').order('created_at');
+  const users=data||[];
+  document.getElementById('usersList').innerHTML=users.map(u=>`
+    <div class="user-row">
+      <span class="user-email">${u.email}</span>
+      <span class="user-role ${u.role==='admin'?'role-admin':'role-viewer'}">${u.role}</span>
+      ${u.email!==currentUser.email?`<button class="remove-btn" onclick="removeUser('${u.email}')">ลบ</button>`:'<span style="font-size:11px;color:var(--t3);">(คุณ)</span>'}
+    </div>`).join('');
+}
+
+async function addUser(){
+  const email=document.getElementById('newUserEmail').value.trim();
+  const role=document.getElementById('newUserRole').value;
+  if(!email){showToast('กรุณากรอก email');return;}
+  const{error}=await sb.from('allowed_users').insert({email,role});
+  if(error){showToast('เพิ่มไม่ได้: '+error.message);return;}
+  document.getElementById('newUserEmail').value='';
+  showToast('เพิ่มผู้ใช้แล้ว ✓');
+  renderAdmin();
+}
+
+async function removeUser(email){
+  if(!confirm(`ลบ ${email} ออกจากระบบ?`))return;
+  await sb.from('allowed_users').delete().eq('email',email);
+  showToast('ลบผู้ใช้แล้ว');
+  renderAdmin();
+}
+
+// ============================================================
+// STUDENT CRUD (Admin only)
+// ============================================================
+function buildSchedGrid(schedule){
+  const classDays=getClassDays(curY,curM);
+  let h=`<table class="smt"><thead><tr><th class="tdate">วันที่</th><th style="background:#dbeafe;color:#1e40af;">M10</th><th style="background:#d1fae5;color:#065f46;">M13</th><th style="background:#ede9fe;color:#4c1d95;">M15</th></tr></thead><tbody>`;
+  classDays.forEach(d=>{
+    h+=`<tr><td class="tdate">${d.dayTh} ${d.date}</td>`;
+    SLOTS.forEach(sl=>{
+      const chk=(schedule[d.iso]||[]).includes(sl)?'checked':'';
+      h+=`<td><input type="checkbox" data-iso="${d.iso}" data-slot="${sl}" ${chk} style="cursor:pointer;width:16px;height:16px;"></td>`;
+    });
+    h+='</tr>';
+  });
+  return h+'</tbody></table>';
+}
+
+function getSchedFromModal(){
+  const r={};
+  document.querySelectorAll('#modalSchedGrid input:checked').forEach(el=>{
+    const iso=el.dataset.iso;
+    if(!r[iso])r[iso]=[];
+    r[iso].push(el.dataset.slot);
+  });
+  return r;
+}
+
+function openAdd(){
+  editingStudentId=null;
+  document.getElementById('modalTitle').textContent='เพิ่มนักเรียน';
+  document.getElementById('inp-name').value='';
+  document.getElementById('inp-nick').value='';
+  document.getElementById('inp-grade').value='ม.5';
+  document.getElementById('inp-paid').value='false';
+  document.getElementById('deleteBtn').style.display='none';
+  document.getElementById('modalSchedGrid').innerHTML=buildSchedGrid({});
+  document.getElementById('studentOv').classList.add('open');
+}
+
+function openEdit(id){
+  const s=students.find(x=>x.id===id);if(!s)return;
+  editingStudentId=id;
+  document.getElementById('modalTitle').textContent=`แก้ไข — ${s.nick}`;
+  document.getElementById('inp-name').value=s.name;
+  document.getElementById('inp-nick').value=s.nick;
+  document.getElementById('inp-grade').value=s.grade;
+  document.getElementById('inp-paid').value=s.paid?'true':'false';
+  document.getElementById('deleteBtn').style.display='inline-flex';
+  document.getElementById('modalSchedGrid').innerHTML=buildSchedGrid(s.schedule||{});
+  document.getElementById('studentOv').classList.add('open');
+}
+
+async function saveStudent(){
+  const name=document.getElementById('inp-name').value.trim();
+  const nick=document.getElementById('inp-nick').value.trim();
+  const grade=document.getElementById('inp-grade').value;
+  const paid=document.getElementById('inp-paid').value==='true';
+  const schedule=getSchedFromModal();
+  if(!name&&!nick){showToast('กรุณากรอกชื่อ');return;}
+  showLoading(true);
+  if(editingStudentId){
+    await sb.from('students').update({name,nick,grade,paid}).eq('id',editingStudentId);
+    // Update schedules: delete old for this month, insert new
+    const prefix=`${curY}-${String(curM+1).padStart(2,'0')}-`;
+    await sb.from('schedules').delete().eq('student_id',editingStudentId).gte('iso_date',prefix+'01').lte('iso_date',prefix+'31');
+    for(const[iso,slots] of Object.entries(schedule)){
+      await sb.from('schedules').upsert({student_id:editingStudentId,iso_date:iso,slots});
+    }
+  } else {
+    const{data}=await sb.from('students').insert({name,nick,grade,paid}).select().single();
+    if(data){
+      for(const[iso,slots] of Object.entries(schedule)){
+        await sb.from('schedules').insert({student_id:data.id,iso_date:iso,slots});
+      }
+    }
+  }
+  closeModal('studentOv');
+  await loadData();
+  showToast(editingStudentId?'บันทึกแล้ว ✓':'เพิ่มนักเรียนแล้ว ✓');
+}
+
+async function deleteStudent(){
+  const s=students.find(x=>x.id===editingStudentId);
+  if(!confirm(`ลบ "${s?.nick}" ออกจากระบบ?`))return;
+  showLoading(true);
+  await sb.from('students').delete().eq('id',editingStudentId);
+  closeModal('studentOv');
+  await loadData();
+  showToast('ลบแล้ว');
+}
+
+// ============================================================
+// IMPORT CSV
+// ============================================================
+function openImport(){
+  pendingImport=null;
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importConfirmBtn').style.display='none';
+  document.getElementById('csvFile').value='';
+  document.getElementById('importOv').classList.add('open');
+}
+function handleDrop(e){const f=e.dataTransfer.files[0];if(f)processCSV(f);}
+function handleFileSelect(e){const f=e.target.files[0];if(f)processCSV(f);}
+
+function processCSV(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const result=parseCSV(e.target.result);
+      if(result){pendingImport=result;showImportPreview(result);}
+    }catch(err){showToast('อ่านไฟล์ไม่ได้: '+err.message);}
+  };
+  reader.readAsText(file,'utf-8');
+}
+
+function parseCSV(text){
+  const rows=[];
+  text.split('\n').forEach(line=>{
+    const cols=[];let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){
+      if(line[i]==='"'){inQ=!inQ;}
+      else if(line[i]===','&&!inQ){cols.push(cur.trim());cur='';}
+      else cur+=line[i];
+    }
+    cols.push(cur.trim());rows.push(cols);
+  });
+  const headerText=(rows[0]||[]).join(' ');
+  const monthMap={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  let detY=curY,detM=curM;
+  const mM=headerText.match(/\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\b/i);
+  if(mM)detM=monthMap[mM[1].toUpperCase()];
+  const yM=headerText.match(/20\d\d/);if(yM)detY=parseInt(yM[0]);
+  let hIdx=-1;
+  for(let i=0;i<Math.min(rows.length,15);i++){
+    if(rows[i].join(',').includes('No.')&&rows[i].join(',').includes('name')){hIdx=i;break;}
+  }
+  if(hIdx<0)throw new Error('ไม่พบหัวตาราง No./name');
+  const hRow=rows[hIdx];
+  const dateCols=[];
+  hRow.forEach((v,i)=>{const n=parseInt(v);if(!isNaN(n)&&n>=1&&n<=31)dateCols.push({col:i,date:n});});
+  if(!dateCols.length)throw new Error('ไม่พบคอลัมน์วันที่');
+  const noCol=hRow.findIndex(v=>v.trim()==='No.');
+  const nameCol=hRow.findIndex(v=>v.trim()==='name');
+  const gradeCol=hRow.findIndex(v=>v.trim()==='ชั้น');
+  const parsed=[];
+  for(let i=hIdx+1;i<rows.length;i++){
+    const row=rows[i];
+    const noV=(row[noCol]||'').trim();
+    const nameV=(row[nameCol]||'').trim();
+    if(!noV||!nameV||isNaN(parseInt(noV)))continue;
+    const mN=nameV.match(/^(.+?)\s*\((.+?)\)$/);
+    const name=mN?mN[1].trim():nameV;
+    const nick=mN?mN[2].trim():nameV;
+    const grade=(row[gradeCol]||'').trim();
+    const schedule={};
+    dateCols.forEach(({col,date})=>{
+      const val=(row[col]||'').trim();if(!val)return;
+      const slots=val.split(',').map(s=>s.trim()).filter(s=>SLOT_SET.has(s));
+      if(slots.length)schedule[`${detY}-${String(detM+1).padStart(2,'0')}-${String(date).padStart(2,'0')}`]=slots;
+    });
+    parsed.push({no:parseInt(noV),name,nick,grade,schedule});
+  }
+  if(!parsed.length)throw new Error('ไม่พบข้อมูลนักเรียน');
+  return{year:detY,month:detM,students:parsed};
+}
+
+function showImportPreview(result){
+  const{year,month,students:ps}=result;
+  const withS=ps.filter(s=>Object.keys(s.schedule).length>0);
+  document.getElementById('importTitle').textContent=`พบ ${ps.length} คน (${withS.length} คนมีตาราง) — ${THMO[month]} ${year+543}`;
+  let h='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;"><tr><th style="text-align:left;padding:3px 6px;">ชื่อเล่น</th><th>ชั้น</th><th>ครั้ง</th></tr>';
+  withS.slice(0,5).forEach(s=>{
+    const tot=Object.values(s.schedule).reduce((n,sl)=>n+sl.length,0);
+    h+=`<tr><td style="padding:3px 6px;">${s.nick}</td><td style="text-align:center;">${s.grade}</td><td style="text-align:center;">${tot}</td></tr>`;
+  });
+  if(withS.length>5)h+=`<tr><td colspan="3" style="padding:3px 6px;color:var(--t3);">... และอีก ${withS.length-5} คน</td></tr>`;
+  document.getElementById('importDetails').innerHTML=h+'</table>';
+  document.getElementById('importPreview').style.display='block';
+  document.getElementById('importConfirmBtn').style.display='inline-flex';
+}
+
+async function confirmImport(){
+  if(!pendingImport)return;
+  showLoading(true);
+  const{year,month,students:ps}=pendingImport;
+  const prefix=`${year}-${String(month+1).padStart(2,'0')}-`;
+  let added=0,updated=0;
+  for(const p of ps){
+    if(!Object.keys(p.schedule).length)continue;
+    // Find existing student
+    let existing=students.find(s=>s.name===p.name&&s.nick===p.nick)||students.find(s=>s.nick===p.nick);
+    let sid;
+    if(existing){
+      sid=existing.id;
+      if(p.grade)await sb.from('students').update({grade:p.grade}).eq('id',sid);
+      updated++;
+    } else {
+      const{data}=await sb.from('students').insert({name:p.name,nick:p.nick,grade:p.grade,paid:false}).select().single();
+      sid=data?.id;added++;
+    }
+    if(!sid)continue;
+    // Delete old schedules for this month
+    await sb.from('schedules').delete().eq('student_id',sid).gte('iso_date',prefix+'01').lte('iso_date',prefix+'31');
+    // Insert new
+    for(const[iso,slots] of Object.entries(p.schedule)){
+      await sb.from('schedules').insert({student_id:sid,iso_date:iso,slots});
+    }
+  }
+  curY=year;curM=month;
+  closeModal('importOv');
+  await loadData();
+  showToast(`Import สำเร็จ ✓ เพิ่ม ${added} · อัปเดต ${updated} คน`);
+  pendingImport=null;
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showTab(tab,btn){
+  document.querySelectorAll('.tc').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
+async function changeMonth(d){
+  curM+=d;if(curM<0){curM=11;curY--;}if(curM>11){curM=0;curY++;}
+  showLoading(true);
+  await loadSchedulesForMonth(curY,curM);
+  showLoading(false);
+  renderAll();
+}
+function filterStudents(v){filterTxt=v;renderSidebar();}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ============================================================
+// START
+// ============================================================
+init();
+</script>
+</body>
+</html>
