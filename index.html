@@ -15,9 +15,12 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
 .login-card{background:var(--s);border:1px solid var(--bd);border-radius:20px;padding:40px;width:380px;max-width:95vw;box-shadow:0 4px 24px rgba(0,0,0,.06);}
 .login-logo{text-align:center;margin-bottom:28px;}
-.login-logo .logo-text{font-size:26px;font-weight:700;letter-spacing:-.5px;}
+.login-logo .logo-img{height:74px;width:auto;margin-bottom:8px;}
+.login-logo .logo-text{font-size:18px;font-weight:700;letter-spacing:-.3px;color:var(--t2);}
 .login-logo .logo-text span{color:var(--ac);}
-.login-logo p{font-size:13px;color:var(--t3);margin-top:4px;}
+.login-logo p{font-size:13px;color:var(--t3);margin-top:6px;}
+.brand-img{height:30px;width:auto;display:inline-block;vertical-align:middle;}
+.viewer-brand-img{height:28px;width:auto;display:inline-block;vertical-align:middle;}
 .login-form .fg{margin-bottom:14px;}
 .login-form label{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:5px;display:block;}
 .login-form input{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;font-family:'Sarabun',sans-serif;font-size:14px;outline:none;background:var(--bg);color:var(--t);transition:border-color .15s;}
@@ -235,6 +238,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 <div class="login-page" id="loginPage" style="display:none;">
   <div class="login-card">
     <div class="login-logo">
+      <img src="logo.png" alt="Sapiens Tutor" class="logo-img" onerror="this.style.display='none'">
       <div class="logo-text">ตารางเรียน<span>HB</span></div>
       <p>กรุณาเข้าสู่ระบบเพื่อดูตารางเรียน</p>
     </div>
@@ -265,7 +269,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 <!-- ===== VIEWER PAGE (mobile-first) ===== -->
 <div class="viewer-page" id="viewerPage">
   <div class="viewer-topbar">
-    <div class="viewer-logo">ตารางเรียน<span>HB</span></div>
+    <div class="viewer-logo"><img src="logo.png" alt="Sapiens" class="viewer-brand-img" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none;">ตารางเรียน<span>HB</span></span></div>
     <div class="viewer-topbar-right">
       <div class="viewer-month-nav">
         <button class="viewer-month-btn" onclick="viewerChangeMonth(-1)">‹</button>
@@ -281,7 +285,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 <!-- ===== ADMIN APP PAGE ===== -->
 <div class="app-page" id="appPage">
   <div class="topbar">
-    <div class="logo">ตารางเรียน<span>HB</span></div>
+    <div class="logo"><img src="logo.png" alt="Sapiens" class="brand-img" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none;">ตารางเรียน<span>HB</span></span></div>
     <nav class="nav">
       <button class="nb active" onclick="showTab('schedule',this)">ตารางเรียน</button>
       <button class="nb" onclick="showTab('summary',this)">สรุปรายเดือน</button>
