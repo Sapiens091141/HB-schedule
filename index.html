@@ -437,6 +437,13 @@ let editingStudentId=null,filterTxt='';
 let pendingImport=null;
 
 // ============================================================
+// AUTH GUARD — block admin functions if not admin
+// ============================================================
+function requireAdmin(){
+  if(userRole!=='admin'){showToast('สิทธิ์ไม่เพียงพอ');throw new Error('Not admin');}
+}
+
+// ============================================================
 // INIT
 // ============================================================
 async function init(){
@@ -538,7 +545,6 @@ async function loadViewerData(){
 
 function renderViewerPage(myStudents){
   document.getElementById('viewerMonthLabel').textContent=THMO[vM]+' '+(vY+543);
-  const prefix=`${vY}-${String(vM+1).padStart(2,'0')}-`;
   const classDays=getClassDays(vY,vM);
   const content=document.getElementById('viewerContent');
 
@@ -647,6 +653,11 @@ function showRegister(){document.getElementById('loginForm').style.display='none
 // HELPERS
 // ============================================================
 function isoDate(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function isoToDate(iso){
+  // FIXED: parse ISO date safely without Date constructor quirks
+  const[y,m,d]=iso.split('-').map(Number);
+  return new Date(y,m-1,d);
+}
 function getClassDays(y,m){
   const r=[];const d=new Date(y,m,1);
   while(d.getMonth()===m){
@@ -731,14 +742,16 @@ function renderSchedule(){
 
 function renderSummary(){
   const prefix=`${curY}-${String(curM+1).padStart(2,'0')}-`;
-  const classDays=getClassDays(curY,curM);
   const active=students.filter(s=>Object.keys(s.schedule||{}).some(k=>k.startsWith(prefix)));
   if(!active.length){document.getElementById('summaryGrid').innerHTML=`<div class="no-data" style="grid-column:1/-1"><strong>ยังไม่มีข้อมูลเดือนนี้</strong></div>`;return;}
   document.getElementById('summaryGrid').innerHTML=active.map((s,i)=>{
     const entries=Object.entries(s.schedule||{}).filter(([k])=>k.startsWith(prefix)).sort((a,b)=>a[0]>b[0]?1:-1);
     const tot=entries.reduce((n,[,sl])=>n+sl.length,0);
     const tags=entries.flatMap(([iso,slots])=>{
-      const d=parseInt(iso.split('-')[2]);const dow=new Date(...iso.split('-').map((v,i)=>i===1?v-1:+v)).getDay();
+      // FIXED: use safe ISO parser
+      const dt=isoToDate(iso);
+      const d=dt.getDate();
+      const dow=dt.getDay();
       return slots.map(sl=>`<span class="dtg chip-${sl}">${DTH[dow]}${d} ${sl}</span>`);
     }).join('');
     return`<div class="mc"><div class="mch"><div class="mca ${avC(i)}">${ini(s)}</div>
@@ -781,6 +794,7 @@ function renderHeatmap(){
 // ADMIN — USER MANAGEMENT
 // ============================================================
 async function renderAdmin(){
+  if(userRole!=='admin')return;
   const{data}=await sb.from('allowed_users').select('*').order('created_at');
   const users=data||[];
   const pending=users.filter(u=>u.role==='pending');
@@ -833,6 +847,7 @@ async function renderAdmin(){
 }
 
 async function linkStudent(email){
+  try{requireAdmin();}catch(e){return;}
   const selId='lnk-'+email.replace(/[@.]/g,'_');
   const sid=parseInt(document.getElementById(selId)?.value);
   if(!sid){showToast('กรุณาเลือกนักเรียน');return;}
@@ -844,13 +859,16 @@ async function linkStudent(email){
 }
 
 async function unlinkStudent(email,sid){
+  try{requireAdmin();}catch(e){return;}
   const{data:u}=await sb.from('allowed_users').select('student_ids').eq('email',email).single();
   const ids=(u?.student_ids||[]).filter(x=>x!==sid);
-  await sb.from('allowed_users').update({student_ids:ids}).eq('email',email);
+  const{error}=await sb.from('allowed_users').update({student_ids:ids}).eq('email',email);
+  if(error){showToast('เกิดข้อผิดพลาด: '+error.message);return;}
   showToast('ยกเลิกการผูกแล้ว');renderAdmin();
 }
 
 async function approveUser(email,selId){
+  try{requireAdmin();}catch(e){return;}
   const role=document.getElementById(selId)?.value||'viewer';
   const{error}=await sb.from('allowed_users').update({role}).eq('email',email);
   if(error){showToast('เกิดข้อผิดพลาด: '+error.message);return;}
@@ -858,12 +876,15 @@ async function approveUser(email,selId){
 }
 
 async function rejectUser(email){
+  try{requireAdmin();}catch(e){return;}
   if(!confirm(`ปฏิเสธ ${email}?`))return;
-  await sb.from('allowed_users').delete().eq('email',email);
+  const{error}=await sb.from('allowed_users').delete().eq('email',email);
+  if(error){showToast('เกิดข้อผิดพลาด: '+error.message);return;}
   showToast('ปฏิเสธแล้ว');renderAdmin();
 }
 
 async function addUser(){
+  try{requireAdmin();}catch(e){return;}
   const email=document.getElementById('newUserEmail').value.trim();
   const role=document.getElementById('newUserRole').value;
   if(!email){showToast('กรุณากรอก email');return;}
@@ -874,8 +895,11 @@ async function addUser(){
 }
 
 async function removeUser(email){
+  try{requireAdmin();}catch(e){return;}
+  if(email===currentUser.email){showToast('ลบตัวเองไม่ได้');return;}
   if(!confirm(`ลบ ${email} ออกจากระบบ?`))return;
-  await sb.from('allowed_users').delete().eq('email',email);
+  const{error}=await sb.from('allowed_users').delete().eq('email',email);
+  if(error){showToast('เกิดข้อผิดพลาด: '+error.message);return;}
   showToast('ลบผู้ใช้แล้ว');renderAdmin();
 }
 
@@ -902,6 +926,7 @@ function getSchedFromModal(){
 }
 
 function openAdd(){
+  try{requireAdmin();}catch(e){return;}
   editingStudentId=null;
   document.getElementById('modalTitle').textContent='เพิ่มนักเรียน';
   document.getElementById('inp-name').value='';document.getElementById('inp-nick').value='';
@@ -912,6 +937,7 @@ function openAdd(){
 }
 
 function openEdit(id){
+  try{requireAdmin();}catch(e){return;}
   const s=students.find(x=>x.id===id);if(!s)return;
   editingStudentId=id;
   document.getElementById('modalTitle').textContent=`แก้ไข — ${s.nick}`;
@@ -923,6 +949,7 @@ function openEdit(id){
 }
 
 async function saveStudent(){
+  try{requireAdmin();}catch(e){return;}
   const name=document.getElementById('inp-name').value.trim();
   const nick=document.getElementById('inp-nick').value.trim();
   const grade=document.getElementById('inp-grade').value;
@@ -944,6 +971,7 @@ async function saveStudent(){
 }
 
 async function deleteStudent(){
+  try{requireAdmin();}catch(e){return;}
   const s=students.find(x=>x.id===editingStudentId);
   if(!confirm(`ลบ "${s?.nick}" ออกจากระบบ?`))return;
   showLoading(true);
@@ -955,6 +983,7 @@ async function deleteStudent(){
 // IMPORT CSV
 // ============================================================
 function openImport(){
+  try{requireAdmin();}catch(e){return;}
   pendingImport=null;
   document.getElementById('importPreview').style.display='none';
   document.getElementById('importConfirmBtn').style.display='none';
@@ -1025,6 +1054,7 @@ function showImportPreview(result){
 }
 
 async function confirmImport(){
+  try{requireAdmin();}catch(e){return;}
   if(!pendingImport)return;
   showLoading(true);
   const{year,month,students:ps}=pendingImport;
