@@ -224,6 +224,190 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .viewer-no-student{text-align:center;padding:48px 24px;color:var(--t3);}
 .viewer-no-student .big{font-size:48px;margin-bottom:12px;}
 .viewer-no-student p{font-size:14px;line-height:1.6;}
+
+/* ============================================================
+   ADMIN MOBILE — Bottom Nav, FAB, Responsive Layouts
+   ============================================================ */
+.bottom-nav{display:none;}
+.fab{display:none;}
+.mobile-sched-cards{display:none;}
+.mobile-month-bar{display:none;}
+
+@media (max-width: 768px){
+  /* ----- topbar: ย่อ ----- */
+  .topbar{padding:0 12px;height:48px;}
+  .logo{font-size:14px;}
+  .brand-img{height:24px;}
+  .nav{display:none;} /* ซ่อน top nav, ใช้ bottom แทน */
+  .topbar-right{gap:6px;}
+  .user-badge{display:none;} /* ซ่อน email บน topbar ประหยัดที่ */
+  .import-btn{display:none !important;} /* ย้ายไปแท็บ admin */
+  .logout-btn{padding:4px 8px;font-size:12px;}
+
+  /* เดือน: ซ่อนใน topbar, แสดงเป็น bar ใต้ topbar แทน */
+  .topbar .mn{display:none;}
+  .mobile-month-bar{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--s);border-bottom:1px solid var(--bd);
+    padding:8px 12px;position:sticky;top:48px;z-index:99;
+  }
+  .mobile-month-bar .mb{width:32px;height:32px;font-size:16px;}
+  .mobile-month-bar .ml{font-size:14px;min-width:140px;}
+
+  /* ----- sidebar: ซ่อน ----- */
+  .sb{display:none;}
+  .main{display:block;}
+  .ct{padding:12px 12px 88px;} /* padding-bottom เผื่อ bottom-nav */
+
+  /* ----- stats 4 ใบ → 2x2 ----- */
+  .sr{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .sk{padding:10px 12px;}
+  .sv{font-size:20px;}
+  .sl2{font-size:10px;}
+
+  /* ----- รายชื่อนักเรียนแบบ inline (ใต้ stats) ----- */
+  .mobile-student-section{
+    background:var(--s);border:1px solid var(--bd);border-radius:12px;
+    padding:12px;margin-bottom:14px;
+  }
+  .mobile-student-section .sbt{margin-bottom:6px;}
+  .mobile-student-list{
+    max-height:240px;overflow-y:auto;
+    border-top:1px solid var(--bd);padding-top:6px;margin-top:6px;
+  }
+
+  /* ----- section header ----- */
+  .sh{flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:10px;}
+  .sh h2{font-size:15px;}
+  .leg{gap:6px;}
+  .leg .li{font-size:10px;}
+  .leg .ld{width:8px;height:8px;}
+
+  /* ----- ตารางรายวัน: ใช้ card mode แทน ----- */
+  .sw{display:none;} /* ซ่อนตารางใหญ่ */
+  .mobile-sched-cards{display:block;}
+  .msc-card{
+    background:var(--s);border:1px solid var(--bd);border-radius:12px;
+    margin-bottom:10px;overflow:hidden;
+  }
+  .msc-head{
+    padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--bd);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .msc-date{font-size:16px;font-weight:700;}
+  .msc-day{font-size:11px;color:var(--t3);margin-left:6px;font-weight:400;}
+  .msc-total{
+    font-size:11px;font-weight:700;color:var(--ac);background:var(--acl);
+    padding:2px 8px;border-radius:10px;
+  }
+  .msc-slots{padding:8px 12px 12px;}
+  .msc-slot{padding:8px 0;border-bottom:1px dashed var(--bd);}
+  .msc-slot:last-child{border-bottom:none;}
+  .msc-slot-label{
+    font-size:11px;font-weight:700;color:var(--t2);margin-bottom:4px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .msc-slot-dot{width:8px;height:8px;border-radius:3px;}
+  .msc-chips{display:flex;flex-wrap:wrap;gap:4px;}
+  .msc-empty{font-size:11px;color:var(--t3);font-style:italic;}
+
+  /* ----- สรุปรายเดือน: 1 column ----- */
+  .mg{grid-template-columns:1fr;gap:8px;}
+  .mc{padding:11px;}
+
+  /* ----- heatmap: ลด font + padding ----- */
+  .ht td{padding:6px 4px;font-size:13px;}
+  .ht th{padding:5px;font-size:10px;}
+  #hmStats > div{grid-template-columns:repeat(auto-fill,minmax(88px,1fr)) !important;gap:6px !important;}
+  #hmStats .sk{padding:8px 10px !important;}
+  #hmStats .sv{font-size:16px !important;}
+
+  /* ----- admin panel: 1 column ----- */
+  .admin-grid{grid-template-columns:1fr;gap:12px;}
+  .admin-card{padding:12px;}
+  .pending-section-card{padding:12px;}
+  .user-row{flex-direction:column;align-items:stretch;gap:6px;}
+  .user-email{flex:none;}
+  .add-user-form input{min-width:0;}
+
+  /* ----- modal: full-screen ----- */
+  .ov{align-items:stretch;}
+  .mo{
+    width:100%;max-width:100%;max-height:100%;
+    border-radius:0;padding:14px 14px 80px; /* padding-bottom เผื่อ sticky bar */
+    overflow-y:auto;
+  }
+  .moti{font-size:16px;margin-bottom:12px;}
+  .fr{grid-template-columns:1fr;gap:0;}
+
+  /* sticky bottom action bar ใน modal */
+  .ma{
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--s);border-top:1px solid var(--bd);
+    padding:10px 14px;margin:0;
+    box-shadow:0 -2px 12px rgba(0,0,0,.05);
+    z-index:201;
+  }
+  .ma .btn{flex:1;padding:10px;font-size:14px;}
+
+  /* checkbox grid in modal: ใหญ่ขึ้น */
+  .smt th{font-size:10px;padding:4px;}
+  .smt td{padding:8px 4px;}
+  .smt input[type="checkbox"]{
+    width:22px !important;height:22px !important;
+    accent-color:var(--ac);
+  }
+  .smt .tdate{font-size:11px;padding:6px;}
+
+  /* ----- bottom nav ----- */
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;
+    background:var(--s);border-top:1px solid var(--bd);
+    z-index:150;height:60px;
+    box-shadow:0 -2px 8px rgba(0,0,0,.04);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .bn-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:2px;border:none;background:none;cursor:pointer;
+    font-family:'Sarabun',sans-serif;color:var(--t3);
+    padding:4px;position:relative;transition:color .15s;
+  }
+  .bn-btn.active{color:var(--ac);}
+  .bn-icon{font-size:20px;line-height:1;}
+  .bn-label{font-size:10px;font-weight:600;}
+  .bn-dot{
+    position:absolute;top:6px;right:calc(50% - 18px);
+    width:7px;height:7px;background:#f59e0b;border-radius:50%;
+  }
+
+  /* ----- FAB ----- */
+  .fab{
+    display:flex;position:fixed;bottom:72px;right:14px;
+    width:52px;height:52px;border-radius:50%;
+    background:var(--ac);color:#fff;border:none;cursor:pointer;
+    font-size:24px;font-weight:300;line-height:1;
+    align-items:center;justify-content:center;
+    box-shadow:0 4px 16px rgba(37,99,168,.4);
+    z-index:140;transition:transform .15s, box-shadow .15s;
+  }
+  .fab:active{transform:scale(.92);}
+
+  /* ----- ซ่อน "Import CSV" ด้านบน, แสดงเป็นปุ่มใน admin tab แทน ----- */
+  .mobile-import-card{
+    background:var(--s);border:1px solid var(--bd);border-radius:12px;
+    padding:14px;margin-bottom:14px;
+  }
+
+  /* viewer: เผื่อใช้บน tablet ก็ดูได้ */
+  .viewer-content{max-width:100%;}
+}
+
+/* Tablet — ระหว่าง 768-1024 ก็ปรับนิดหน่อย */
+@media (max-width: 1024px) and (min-width: 769px){
+  .sb{width:200px;}
+  .sr{grid-template-columns:repeat(2,1fr);}
+}
 </style>
 </head>
 <body>
@@ -306,6 +490,12 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       <button class="logout-btn" onclick="doLogout()">ออกจากระบบ</button>
     </div>
   </div>
+  <!-- Mobile-only: month nav bar -->
+  <div class="mobile-month-bar">
+    <button class="mb" onclick="changeMonth(-1)">‹</button>
+    <div class="ml" id="monthLabelMobile"></div>
+    <button class="mb" onclick="changeMonth(1)">›</button>
+  </div>
   <div class="main">
     <div class="sb">
       <div class="sbt">นักเรียน (<span id="sideCnt">0</span>)</div>
@@ -315,6 +505,12 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
     </div>
     <div class="ct">
       <div class="sr" id="statsRow"></div>
+      <!-- Mobile-only: student list inline -->
+      <div class="mobile-student-section" id="mobileStudentSection" style="display:none;">
+        <div class="sbt">นักเรียน (<span id="mobileSideCnt">0</span>)</div>
+        <input class="sx" type="text" placeholder="ค้นหาชื่อ..." oninput="filterStudents(this.value)">
+        <div class="mobile-student-list" id="mobileStudentList"></div>
+      </div>
       <div class="tc active" id="tab-schedule">
         <div class="sh">
           <h2>ตารางเรียนรายวัน</h2>
@@ -326,6 +522,8 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
           </div>
         </div>
         <div id="schedWrap"></div>
+        <!-- Mobile-only: card view -->
+        <div class="mobile-sched-cards" id="mobileSchedCards"></div>
       </div>
       <div class="tc" id="tab-summary">
         <div class="sh"><h2>สรุปรายเดือน — รายคน</h2></div>
@@ -338,6 +536,11 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       </div>
       <div class="tc" id="tab-admin">
         <div class="sh"><h2>⚙️ จัดการผู้ใช้ที่มีสิทธิ์เข้าถึง</h2></div>
+        <!-- Mobile-only: Import CSV button (เพราะ topbar ซ่อน) -->
+        <div class="mobile-import-card" id="mobileImportCard" style="display:none;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;">📥 นำเข้าข้อมูล</div>
+          <button class="btn bp" style="width:100%;" onclick="openImport()">↑ Import CSV เดือนใหม่</button>
+        </div>
         <div id="pendingSection" class="pending-section-card" style="display:none;">
           <h3>⏳ รออนุมัติ <span id="pendingCountBadge" class="pending-badge-label"></span></h3>
           <div id="pendingList"></div>
@@ -368,9 +571,25 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       </div>
     </div>
   </div>
+  <!-- Mobile-only: bottom tab bar -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bn-btn active" data-tab="schedule" onclick="showTab('schedule',this,true)">
+      <div class="bn-icon">📅</div><div class="bn-label">ตาราง</div>
+    </button>
+    <button class="bn-btn" data-tab="summary" onclick="showTab('summary',this,true)">
+      <div class="bn-icon">📊</div><div class="bn-label">สรุป</div>
+    </button>
+    <button class="bn-btn" data-tab="heatmap" onclick="showTab('heatmap',this,true)">
+      <div class="bn-icon">🔥</div><div class="bn-label">ช่วงเวลา</div>
+    </button>
+    <button class="bn-btn" data-tab="admin" onclick="showTab('admin',this,true)">
+      <div class="bn-icon">⚙️</div><div class="bn-label">จัดการ</div>
+      <span class="bn-dot" id="bnDot" style="display:none;"></span>
+    </button>
+  </nav>
+  <!-- Mobile-only: FAB เพิ่มนักเรียน -->
+  <button class="fab" id="fabBtn" onclick="openAdd()" title="เพิ่มนักเรียน">+</button>
 </div>
-
-<!-- Student Modal -->
 <div class="ov" id="studentOv" onclick="if(event.target===this)closeModal('studentOv')">
 <div class="mo">
   <div class="moti" id="modalTitle">เพิ่มนักเรียน</div>
@@ -441,6 +660,23 @@ let editingStudentId=null,filterTxt='';
 let pendingImport=null;
 
 // ============================================================
+// MOBILE DETECTION
+// ============================================================
+function isMobile(){return window.innerWidth<=768;}
+
+function setupMobileAdminUI(){
+  // เปิด/ปิด mobile-only sections ตาม screen size
+  const m=isMobile();
+  document.getElementById('mobileStudentSection').style.display=m?'block':'none';
+  document.getElementById('mobileImportCard').style.display=m?'block':'none';
+  // FAB: โผล่บนมือถือเฉพาะแท็บที่ไม่ใช่ admin
+  const fab=document.getElementById('fabBtn');
+  const activeTab=document.querySelector('.tc.active')?.id;
+  if(fab)fab.style.display=(m&&activeTab!=='tab-admin')?'flex':'none';
+}
+window.addEventListener('resize',()=>{if(userRole==='admin'){setupMobileAdminUI();renderAll();}});
+
+// ============================================================
 // AUTH GUARD — block admin functions if not admin
 // ============================================================
 function requireAdmin(){
@@ -506,6 +742,7 @@ function setupAdminUI(){
   document.getElementById('adminTabBtn').style.display='';
   document.getElementById('importBtnTop').style.display='';
   document.getElementById('addStudentBtn').style.display='';
+  setupMobileAdminUI();
 }
 
 // ============================================================
@@ -688,10 +925,13 @@ function showPage(p){
 // RENDER (admin)
 // ============================================================
 function renderAll(){
-  document.getElementById('monthLabel').textContent=THMO[curM]+' '+(curY+543);
-  renderStats();renderSidebar();
+  const monthLabel=THMO[curM]+' '+(curY+543);
+  document.getElementById('monthLabel').textContent=monthLabel;
+  const mobLabel=document.getElementById('monthLabelMobile');
+  if(mobLabel)mobLabel.textContent=monthLabel;
+  renderStats();renderSidebar();renderMobileSidebar();
   const t=document.querySelector('.tc.active');
-  if(t?.id==='tab-schedule')renderSchedule();
+  if(t?.id==='tab-schedule'){renderSchedule();renderMobileSched();}
   else if(t?.id==='tab-summary')renderSummary();
   else if(t?.id==='tab-heatmap')renderHeatmap();
   else if(t?.id==='tab-admin')renderAdmin();
@@ -718,6 +958,54 @@ function renderSidebar(){
       <div class="av ${avC(i)}">${ini(s)}</div>
       <div style="flex:1;min-width:0;"><div class="sn">${s.nick} <span style="color:var(--t3);font-weight:400;font-size:10px;">${s.name}</span></div><div class="sg">${s.grade}</div></div>
       ${cnt>0?`<div class="sc">${cnt}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderMobileSidebar(){
+  const sec=document.getElementById('mobileStudentSection');
+  if(!sec||sec.style.display==='none')return;
+  const fil=students.filter(s=>!filterTxt||s.name.includes(filterTxt)||s.nick.includes(filterTxt));
+  document.getElementById('mobileSideCnt').textContent=students.length;
+  document.getElementById('mobileStudentList').innerHTML=fil.map((s,i)=>{
+    const cnt=totalInMonth(s,curY,curM);
+    return`<div class="si" onclick="openEdit(${s.id})">
+      <div class="av ${avC(i)}">${ini(s)}</div>
+      <div style="flex:1;min-width:0;"><div class="sn">${s.nick} <span style="color:var(--t3);font-weight:400;font-size:10px;">${s.name}</span></div><div class="sg">${s.grade}</div></div>
+      ${cnt>0?`<div class="sc">${cnt}</div>`:''}
+    </div>`;
+  }).join('')||'<div class="ce">ไม่พบ</div>';
+}
+
+function renderMobileSched(){
+  const wrap=document.getElementById('mobileSchedCards');
+  if(!wrap)return;
+  const classDays=getClassDays(curY,curM);
+  const hasData=classDays.some(d=>students.some(s=>SLOTS.some(sl=>getSlots(s,d.iso).includes(sl))));
+  if(!hasData){wrap.innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้</strong>กด ⚙️ จัดการ → Import CSV หรือกด ➕ เพื่อเพิ่มนักเรียน</div>`;return;}
+  const slotColors={M10:'#3b82f6',M13:'#10b981',M15:'#8b5cf6',M17:'#eab308'};
+  wrap.innerHTML=classDays.map(d=>{
+    const totalDay=SLOTS.reduce((n,sl)=>n+students.filter(s=>getSlots(s,d.iso).includes(sl)).length,0);
+    if(totalDay===0)return ''; // ซ่อนวันที่ไม่มีเรียน เพื่อ scroll สั้นลง
+    const slotsHtml=SLOTS.map(sl=>{
+      const here=students.filter(s=>getSlots(s,d.iso).includes(sl));
+      const chipsHtml=here.length
+        ? here.map(s=>`<span class="chip chip-${sl}" onclick="openEdit(${s.id})">${s.nick}</span>`).join('')
+        : '<span class="msc-empty">— ไม่มี —</span>';
+      return`<div class="msc-slot">
+        <div class="msc-slot-label">
+          <span class="msc-slot-dot" style="background:${slotColors[sl]}"></span>
+          ${sl} · ${SLB[sl]} ${here.length?`<span style="color:var(--t3);font-weight:400;margin-left:auto;">${here.length} คน</span>`:''}
+        </div>
+        <div class="msc-chips">${chipsHtml}</div>
+      </div>`;
+    }).join('');
+    return`<div class="msc-card">
+      <div class="msc-head">
+        <div><span class="msc-date">${d.date}</span><span class="msc-day">${d.dayTh}</span></div>
+        <div class="msc-total">${totalDay} ครั้ง</div>
+      </div>
+      <div class="msc-slots">${slotsHtml}</div>
     </div>`;
   }).join('');
 }
@@ -805,6 +1093,8 @@ async function renderAdmin(){
   const active=users.filter(u=>u.role!=='pending');
 
   document.getElementById('pendingDot').style.display=pending.length>0?'inline-block':'none';
+  const bnDot=document.getElementById('bnDot');
+  if(bnDot)bnDot.style.display=pending.length>0?'inline-block':'none';
   const pendingSection=document.getElementById('pendingSection');
   if(pending.length>0){
     pendingSection.style.display='block';
@@ -1084,17 +1374,32 @@ async function confirmImport(){
 // UI HELPERS
 // ============================================================
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-function showTab(tab,btn){
+function showTab(tab,btn,fromBottom){
   document.querySelectorAll('.tc').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
+  // sync ทั้ง top nav และ bottom nav
   document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
-  btn.classList.add('active');renderAll();
+  document.querySelectorAll('.bn-btn').forEach(el=>el.classList.remove('active'));
+  if(fromBottom){
+    btn.classList.add('active');
+    // หา top nav button ที่ตรงกัน → เปิด active ด้วย
+    const topBtn=Array.from(document.querySelectorAll('.nb')).find(b=>b.getAttribute('onclick')?.includes(`'${tab}'`));
+    if(topBtn)topBtn.classList.add('active');
+  } else {
+    btn.classList.add('active');
+    const bnBtn=document.querySelector(`.bn-btn[data-tab="${tab}"]`);
+    if(bnBtn)bnBtn.classList.add('active');
+  }
+  // FAB: ซ่อนในแท็บ admin (เพราะ admin tab ไม่เกี่ยวกับเพิ่มนักเรียน)
+  const fab=document.getElementById('fabBtn');
+  if(fab)fab.style.display=(isMobile()&&tab!=='admin')?'flex':'none';
+  renderAll();
 }
 async function changeMonth(d){
   curM+=d;if(curM<0){curM=11;curY--;}if(curM>11){curM=0;curY++;}
   showLoading(true);await loadSchedulesForMonth(curY,curM);showLoading(false);renderAll();
 }
-function filterStudents(v){filterTxt=v;renderSidebar();}
+function filterStudents(v){filterTxt=v;renderSidebar();renderMobileSidebar();}
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
