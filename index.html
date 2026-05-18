@@ -757,8 +757,7 @@ async function loadData(){
 }
 
 async function loadSchedulesForMonth(y,m){
-  const start=`${y}-${String(m+1).padStart(2,'0')}-01`;
-  const end=`${y}-${String(m+1).padStart(2,'0')}-31`;
+  const{start,end}=monthRange(y,m);
   const{data}=await sb.from('schedules').select('*').gte('iso_date',start).lte('iso_date',end);
   const schMap={};
   (data||[]).forEach(r=>{if(!schMap[r.student_id])schMap[r.student_id]={};schMap[r.student_id][r.iso_date]=r.slots;});
@@ -774,8 +773,7 @@ async function loadViewerData(){
   const{data:sData}=await sb.from('students').select('*').in('id',userStudentIds);
   const myStudents=sData||[];
   // load schedules for these students for current viewer month
-  const start=`${vY}-${String(vM+1).padStart(2,'0')}-01`;
-  const end=`${vY}-${String(vM+1).padStart(2,'0')}-31`;
+  const{start,end}=monthRange(vY,vM);
   const{data:schData}=await sb.from('schedules').select('*')
     .in('student_id',userStudentIds).gte('iso_date',start).lte('iso_date',end);
   const schMap={};
@@ -894,6 +892,8 @@ function showRegister(){document.getElementById('loginForm').style.display='none
 // HELPERS
 // ============================================================
 function isoDate(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+function lastDayOfMonth(y,m){return new Date(y,m+1,0).getDate();}
+function monthRange(y,m){const mm=String(m+1).padStart(2,'0');return{start:`${y}-${mm}-01`,end:`${y}-${mm}-${String(lastDayOfMonth(y,m)).padStart(2,'0')}`};}
 function isoToDate(iso){
   // FIXED: parse ISO date safely without Date constructor quirks
   const[y,m,d]=iso.split('-').map(Number);
@@ -1253,9 +1253,9 @@ async function saveStudent(){
   showLoading(true);
   if(editingStudentId){
     await sb.from('students').update({name,nick,grade,paid}).eq('id',editingStudentId);
-    const prefix=`${curY}-${String(curM+1).padStart(2,'0')}-`;
-    await sb.from('schedules').delete().eq('student_id',editingStudentId).gte('iso_date',prefix+'01').lte('iso_date',prefix+'31');
-    for(const[iso,slots] of Object.entries(schedule))await sb.from('schedules').upsert({student_id:editingStudentId,iso_date:iso,slots});
+    const{start:sStart,end:sEnd}=monthRange(curY,curM);
+    await sb.from('schedules').delete().eq('student_id',editingStudentId).gte('iso_date',sStart).lte('iso_date',sEnd);
+    for(const[iso,slots] of Object.entries(schedule))await sb.from('schedules').upsert({student_id:editingStudentId,iso_date:iso,slots},{onConflict:'student_id,iso_date'});
   } else {
     const{data}=await sb.from('students').insert({name,nick,grade,paid}).select().single();
     if(data)for(const[iso,slots] of Object.entries(schedule))await sb.from('schedules').insert({student_id:data.id,iso_date:iso,slots});
@@ -1353,6 +1353,7 @@ async function confirmImport(){
   showLoading(true);
   const{year,month,students:ps}=pendingImport;
   const prefix=`${year}-${String(month+1).padStart(2,'0')}-`;
+  const{start:impStart,end:impEnd}=monthRange(year,month);
   let added=0,updated=0;
   for(const p of ps){
     if(!Object.keys(p.schedule).length)continue;
@@ -1361,8 +1362,8 @@ async function confirmImport(){
     if(existing){sid=existing.id;if(p.grade)await sb.from('students').update({grade:p.grade}).eq('id',sid);updated++;}
     else{const{data}=await sb.from('students').insert({name:p.name,nick:p.nick,grade:p.grade,paid:false}).select().single();sid=data?.id;added++;}
     if(!sid)continue;
-    await sb.from('schedules').delete().eq('student_id',sid).gte('iso_date',prefix+'01').lte('iso_date',prefix+'31');
-    for(const[iso,slots] of Object.entries(p.schedule))await sb.from('schedules').insert({student_id:sid,iso_date:iso,slots});
+    await sb.from('schedules').delete().eq('student_id',sid).gte('iso_date',impStart).lte('iso_date',impEnd);
+    for(const[iso,slots] of Object.entries(p.schedule))await sb.from('schedules').upsert({student_id:sid,iso_date:iso,slots},{onConflict:'student_id,iso_date'});
   }
   curY=year;curM=month;
   closeModal('importOv');await loadData();
