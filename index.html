@@ -694,7 +694,12 @@ async function init(){
   const{data:{session}}=await sb.auth.getSession();
   if(session) await onLogin(session.user);
   else{showLoading(false);showPage('login');}
-  sb.auth.onAuthStateChange(async(_,session)=>{
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    // ป้องกัน re-load ซ้ำตอน TOKEN_REFRESHED / INITIAL_SESSION ถ้ายังเป็น user เดิม
+    if(session && currentUser && session.user.id===currentUser.id){
+      currentUser=session.user;
+      return;
+    }
     if(session) await onLogin(session.user);
     else{currentUser=null;userRole=null;showPage('login');}
   });
@@ -702,23 +707,29 @@ async function init(){
 
 async function onLogin(user){
   currentUser=user;
-  const{data,error}=await sb.from('allowed_users').select('role,student_ids').eq('email',user.email).single();
-  if(error||!data){
-    await sb.auth.signOut();showLoading(false);showPage('login');
-    showLoginError('อีเมลนี้ไม่มีสิทธิ์เข้าถึงระบบ');return;
-  }
-  if(data.role==='pending'){showLoading(false);showPendingState(user.email);return;}
-  userRole=data.role;
-  userStudentIds=data.student_ids||[];
-  if(userRole==='viewer'){
-    await loadViewerData();
+  try{
+    const{data,error}=await sb.from('allowed_users').select('role,student_ids').eq('email',user.email).single();
+    if(error||!data){
+      await sb.auth.signOut();showPage('login');
+      showLoginError('อีเมลนี้ไม่มีสิทธิ์เข้าถึงระบบ');return;
+    }
+    if(data.role==='pending'){showPendingState(user.email);return;}
+    userRole=data.role;
+    userStudentIds=data.student_ids||[];
+    if(userRole==='viewer'){
+      await loadViewerData();
+      showPage('viewer');
+    } else {
+      setupAdminUI();
+      await loadData();
+      showPage('app');
+    }
+  }catch(err){
+    console.error('onLogin failed:',err);
+    showToast('เข้าสู่ระบบไม่สำเร็จ: '+(err.message||err));
+    showPage('login');
+  }finally{
     showLoading(false);
-    showPage('viewer');
-  } else {
-    setupAdminUI();
-    await loadData();
-    showLoading(false);
-    showPage('app');
   }
 }
 
@@ -750,10 +761,18 @@ function setupAdminUI(){
 // ============================================================
 async function loadData(){
   showLoading(true);
-  const{data:sData}=await sb.from('students').select('*').order('id');
-  students=sData||[];
-  await loadSchedulesForMonth(curY,curM);
-  showLoading(false);renderAll();
+  try{
+    const{data:sData,error:sErr}=await sb.from('students').select('*').order('id');
+    if(sErr)throw sErr;
+    students=sData||[];
+    await loadSchedulesForMonth(curY,curM);
+    renderAll();
+  }catch(err){
+    console.error('loadData failed:',err);
+    showToast('โหลดข้อมูลไม่สำเร็จ: '+(err.message||err));
+  }finally{
+    showLoading(false);
+  }
 }
 
 async function loadSchedulesForMonth(y,m){
@@ -769,17 +788,23 @@ async function loadSchedulesForMonth(y,m){
 // VIEWER
 // ============================================================
 async function loadViewerData(){
-  if(!userStudentIds||!userStudentIds.length){renderViewerPage([]);return;}
-  const{data:sData}=await sb.from('students').select('*').in('id',userStudentIds);
-  const myStudents=sData||[];
-  // load schedules for these students for current viewer month
-  const{start,end}=monthRange(vY,vM);
-  const{data:schData}=await sb.from('schedules').select('*')
-    .in('student_id',userStudentIds).gte('iso_date',start).lte('iso_date',end);
-  const schMap={};
-  (schData||[]).forEach(r=>{if(!schMap[r.student_id])schMap[r.student_id]={};schMap[r.student_id][r.iso_date]=r.slots;});
-  myStudents.forEach(s=>{s.schedule=schMap[s.id]||{};});
-  renderViewerPage(myStudents);
+  try{
+    if(!userStudentIds||!userStudentIds.length){renderViewerPage([]);return;}
+    const{data:sData,error:sErr}=await sb.from('students').select('*').in('id',userStudentIds);
+    if(sErr)throw sErr;
+    const myStudents=sData||[];
+    const{start,end}=monthRange(vY,vM);
+    const{data:schData,error:schErr}=await sb.from('schedules').select('*')
+      .in('student_id',userStudentIds).gte('iso_date',start).lte('iso_date',end);
+    if(schErr)throw schErr;
+    const schMap={};
+    (schData||[]).forEach(r=>{if(!schMap[r.student_id])schMap[r.student_id]={};schMap[r.student_id][r.iso_date]=r.slots;});
+    myStudents.forEach(s=>{s.schedule=schMap[s.id]||{};});
+    renderViewerPage(myStudents);
+  }catch(err){
+    console.error('loadViewerData failed:',err);
+    showToast('โหลดข้อมูลไม่สำเร็จ: '+(err.message||err));
+  }
 }
 
 function renderViewerPage(myStudents){
@@ -830,8 +855,11 @@ function renderViewerPage(myStudents){
 async function viewerChangeMonth(d){
   vM+=d;if(vM<0){vM=11;vY--;}if(vM>11){vM=0;vY++;}
   showLoading(true);
-  await loadViewerData();
-  showLoading(false);
+  try{
+    await loadViewerData();
+  }finally{
+    showLoading(false);
+  }
 }
 
 // ============================================================
@@ -913,7 +941,18 @@ function totalInMonth(s,y,m){
 }
 function avC(i){return'a'+(i%6);}
 function ini(s){return(s.nick||s.name||'?').charAt(0).toUpperCase();}
-function showLoading(v){document.getElementById('loadingOverlay').style.display=v?'flex':'none';}
+let _loadingTimer=null;
+function showLoading(v){
+  document.getElementById('loadingOverlay').style.display=v?'flex':'none';
+  if(_loadingTimer){clearTimeout(_loadingTimer);_loadingTimer=null;}
+  if(v){
+    _loadingTimer=setTimeout(()=>{
+      document.getElementById('loadingOverlay').style.display='none';
+      _loadingTimer=null;
+      showToast('โหลดข้อมูลนานเกินไป — กรุณาลองอีกครั้ง');
+    },25000);
+  }
+}
 function showPage(p){
   document.getElementById('loginPage').style.display=p==='login'?'flex':'none';
   document.getElementById('appPage').classList.toggle('show',p==='app');
@@ -1251,17 +1290,34 @@ async function saveStudent(){
   const schedule=getSchedFromModal();
   if(!name&&!nick){showToast('กรุณากรอกชื่อ');return;}
   showLoading(true);
-  if(editingStudentId){
-    await sb.from('students').update({name,nick,grade,paid}).eq('id',editingStudentId);
-    const{start:sStart,end:sEnd}=monthRange(curY,curM);
-    await sb.from('schedules').delete().eq('student_id',editingStudentId).gte('iso_date',sStart).lte('iso_date',sEnd);
-    for(const[iso,slots] of Object.entries(schedule))await sb.from('schedules').upsert({student_id:editingStudentId,iso_date:iso,slots},{onConflict:'student_id,iso_date'});
-  } else {
-    const{data}=await sb.from('students').insert({name,nick,grade,paid}).select().single();
-    if(data)for(const[iso,slots] of Object.entries(schedule))await sb.from('schedules').insert({student_id:data.id,iso_date:iso,slots});
+  try{
+    if(editingStudentId){
+      const{error:e1}=await sb.from('students').update({name,nick,grade,paid}).eq('id',editingStudentId);
+      if(e1)throw e1;
+      const{start:sStart,end:sEnd}=monthRange(curY,curM);
+      const{error:e2}=await sb.from('schedules').delete().eq('student_id',editingStudentId).gte('iso_date',sStart).lte('iso_date',sEnd);
+      if(e2)throw e2;
+      for(const[iso,slots] of Object.entries(schedule)){
+        const{error:e3}=await sb.from('schedules').upsert({student_id:editingStudentId,iso_date:iso,slots},{onConflict:'student_id,iso_date'});
+        if(e3)throw e3;
+      }
+    } else {
+      const{data,error:e1}=await sb.from('students').insert({name,nick,grade,paid}).select().single();
+      if(e1)throw e1;
+      if(data)for(const[iso,slots] of Object.entries(schedule)){
+        const{error:e2}=await sb.from('schedules').insert({student_id:data.id,iso_date:iso,slots});
+        if(e2)throw e2;
+      }
+    }
+    closeModal('studentOv');
+    await loadData();
+    showToast(editingStudentId?'บันทึกแล้ว ✓':'เพิ่มนักเรียนแล้ว ✓');
+  }catch(err){
+    console.error('saveStudent failed:',err);
+    showToast('บันทึกไม่สำเร็จ: '+(err.message||err));
+  }finally{
+    showLoading(false);
   }
-  closeModal('studentOv');await loadData();
-  showToast(editingStudentId?'บันทึกแล้ว ✓':'เพิ่มนักเรียนแล้ว ✓');
 }
 
 async function deleteStudent(){
@@ -1269,8 +1325,18 @@ async function deleteStudent(){
   const s=students.find(x=>x.id===editingStudentId);
   if(!confirm(`ลบ "${s?.nick}" ออกจากระบบ?`))return;
   showLoading(true);
-  await sb.from('students').delete().eq('id',editingStudentId);
-  closeModal('studentOv');await loadData();showToast('ลบแล้ว');
+  try{
+    const{error}=await sb.from('students').delete().eq('id',editingStudentId);
+    if(error)throw error;
+    closeModal('studentOv');
+    await loadData();
+    showToast('ลบแล้ว');
+  }catch(err){
+    console.error('deleteStudent failed:',err);
+    showToast('ลบไม่สำเร็จ: '+(err.message||err));
+  }finally{
+    showLoading(false);
+  }
 }
 
 // ============================================================
@@ -1351,24 +1417,42 @@ async function confirmImport(){
   try{requireAdmin();}catch(e){return;}
   if(!pendingImport)return;
   showLoading(true);
-  const{year,month,students:ps}=pendingImport;
-  const prefix=`${year}-${String(month+1).padStart(2,'0')}-`;
-  const{start:impStart,end:impEnd}=monthRange(year,month);
-  let added=0,updated=0;
-  for(const p of ps){
-    if(!Object.keys(p.schedule).length)continue;
-    let existing=students.find(s=>s.name===p.name&&s.nick===p.nick)||students.find(s=>s.nick===p.nick);
-    let sid;
-    if(existing){sid=existing.id;if(p.grade)await sb.from('students').update({grade:p.grade}).eq('id',sid);updated++;}
-    else{const{data}=await sb.from('students').insert({name:p.name,nick:p.nick,grade:p.grade,paid:false}).select().single();sid=data?.id;added++;}
-    if(!sid)continue;
-    await sb.from('schedules').delete().eq('student_id',sid).gte('iso_date',impStart).lte('iso_date',impEnd);
-    for(const[iso,slots] of Object.entries(p.schedule))await sb.from('schedules').upsert({student_id:sid,iso_date:iso,slots},{onConflict:'student_id,iso_date'});
+  try{
+    const{year,month,students:ps}=pendingImport;
+    const{start:impStart,end:impEnd}=monthRange(year,month);
+    let added=0,updated=0;
+    for(const p of ps){
+      if(!Object.keys(p.schedule).length)continue;
+      let existing=students.find(s=>s.name===p.name&&s.nick===p.nick)||students.find(s=>s.nick===p.nick);
+      let sid;
+      if(existing){
+        sid=existing.id;
+        if(p.grade){const{error}=await sb.from('students').update({grade:p.grade}).eq('id',sid);if(error)throw error;}
+        updated++;
+      } else {
+        const{data,error}=await sb.from('students').insert({name:p.name,nick:p.nick,grade:p.grade,paid:false}).select().single();
+        if(error)throw error;
+        sid=data?.id;added++;
+      }
+      if(!sid)continue;
+      const{error:eDel}=await sb.from('schedules').delete().eq('student_id',sid).gte('iso_date',impStart).lte('iso_date',impEnd);
+      if(eDel)throw eDel;
+      for(const[iso,slots] of Object.entries(p.schedule)){
+        const{error:eUp}=await sb.from('schedules').upsert({student_id:sid,iso_date:iso,slots},{onConflict:'student_id,iso_date'});
+        if(eUp)throw eUp;
+      }
+    }
+    curY=year;curM=month;
+    closeModal('importOv');
+    await loadData();
+    showToast(`Import สำเร็จ ✓ เพิ่ม ${added} · อัปเดต ${updated} คน`);
+  }catch(err){
+    console.error('confirmImport failed:',err);
+    showToast('Import ไม่สำเร็จ: '+(err.message||err));
+  }finally{
+    pendingImport=null;
+    showLoading(false);
   }
-  curY=year;curM=month;
-  closeModal('importOv');await loadData();
-  showToast(`Import สำเร็จ ✓ เพิ่ม ${added} · อัปเดต ${updated} คน`);
-  pendingImport=null;
 }
 
 // ============================================================
@@ -1398,7 +1482,16 @@ function showTab(tab,btn,fromBottom){
 }
 async function changeMonth(d){
   curM+=d;if(curM<0){curM=11;curY--;}if(curM>11){curM=0;curY++;}
-  showLoading(true);await loadSchedulesForMonth(curY,curM);showLoading(false);renderAll();
+  showLoading(true);
+  try{
+    await loadSchedulesForMonth(curY,curM);
+    renderAll();
+  }catch(err){
+    console.error('changeMonth failed:',err);
+    showToast('โหลดเดือนไม่สำเร็จ: '+(err.message||err));
+  }finally{
+    showLoading(false);
+  }
 }
 function filterStudents(v){filterTxt=v;renderSidebar();renderMobileSidebar();}
 function showToast(msg){
