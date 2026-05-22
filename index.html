@@ -2,8 +2,24 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ตารางเรียน HB</title>
+
+<!-- PWA / Add to Home Screen -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563a8">
+<meta name="application-name" content="HB">
+<meta name="description" content="ระบบจัดการตารางเรียน HB">
+
+<!-- iOS Home Screen -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="HB">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+<link rel="icon" type="image/png" href="logo.png">
+
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -40,7 +56,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 /* ===== ADMIN APP ===== */
 .app-page{display:none;flex-direction:column;min-height:100vh;}
 .app-page.show{display:flex;}
-.topbar{background:var(--s);border-bottom:1px solid var(--bd);padding:0 20px;display:flex;align-items:center;height:54px;position:sticky;top:0;z-index:100;}
+.topbar{background:var(--s);border-bottom:1px solid var(--bd);padding:env(safe-area-inset-top) 20px 0;display:flex;align-items:center;height:calc(54px + env(safe-area-inset-top));position:sticky;top:0;z-index:100;}
 .logo{font-weight:700;font-size:16px;letter-spacing:-.3px;}.logo span{color:var(--ac);}
 .nav{display:flex;margin-left:20px;gap:2px;}
 .nb{padding:5px 12px;border-radius:8px;border:none;background:none;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:500;color:var(--t2);transition:all .15s;}
@@ -59,7 +75,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .import-btn{padding:5px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--s);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:500;color:var(--t2);transition:all .15s;}
 .import-btn:hover{border-color:var(--ac);color:var(--ac);background:var(--acl);}
 .main{display:flex;flex:1;}
-.sb{width:248px;flex-shrink:0;background:var(--s);border-right:1px solid var(--bd);padding:15px 12px;overflow-y:auto;height:calc(100vh - 54px);position:sticky;top:54px;}
+.sb{width:248px;flex-shrink:0;background:var(--s);border-right:1px solid var(--bd);padding:15px 12px;overflow-y:auto;height:calc(100vh - 54px - env(safe-area-inset-top));position:sticky;top:calc(54px + env(safe-area-inset-top));}
 .ct{flex:1;padding:18px 22px;overflow-y:auto;}
 .sbt{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);margin-bottom:8px;}
 .sx{padding:7px 10px;border:1px solid var(--bd);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:13px;width:100%;margin-bottom:9px;outline:none;background:var(--bg);color:var(--t);}
@@ -188,7 +204,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 /* ===== VIEWER MOBILE PAGE ===== */
 .viewer-page{display:none;flex-direction:column;min-height:100vh;background:var(--bg);}
 .viewer-page.show{display:flex;}
-.viewer-topbar{background:var(--s);border-bottom:1px solid var(--bd);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.viewer-topbar{background:var(--s);border-bottom:1px solid var(--bd);padding:env(safe-area-inset-top) 16px 0;display:flex;align-items:center;justify-content:space-between;height:calc(52px + env(safe-area-inset-top));position:sticky;top:0;z-index:100;}
 .viewer-logo{font-weight:700;font-size:15px;}.viewer-logo span{color:var(--ac);}
 .viewer-topbar-right{display:flex;align-items:center;gap:8px;}
 .viewer-month-nav{display:flex;align-items:center;gap:6px;}
@@ -235,7 +251,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 
 @media (max-width: 768px){
   /* ----- topbar: ย่อ ----- */
-  .topbar{padding:0 12px;height:48px;}
+  .topbar{padding:env(safe-area-inset-top) 12px 0;height:calc(48px + env(safe-area-inset-top));}
   .logo{font-size:14px;}
   .brand-img{height:24px;}
   .nav{display:none;} /* ซ่อน top nav, ใช้ bottom แทน */
@@ -249,7 +265,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
   .mobile-month-bar{
     display:flex;align-items:center;justify-content:center;gap:8px;
     background:var(--s);border-bottom:1px solid var(--bd);
-    padding:8px 12px;position:sticky;top:48px;z-index:99;
+    padding:8px 12px;position:sticky;top:calc(48px + env(safe-area-inset-top));z-index:99;
   }
   .mobile-month-bar .mb{width:32px;height:32px;font-size:16px;}
   .mobile-month-bar .ml{font-size:14px;min-width:140px;}
