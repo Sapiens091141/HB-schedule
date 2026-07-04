@@ -926,7 +926,7 @@ function renderViewerPage(myStudents){
     return;
   }
 
-  content.innerHTML=`<div class="vc-hint">💡 แตะที่คาบเรียนเพื่อ <b>ขอลา</b> — แจ้งล่วงหน้า 2 วันขึ้นไปอนุมัติอัตโนมัติ, น้อยกว่านั้นรอครูพิจารณา</div>`+myStudents.map((s,i)=>{
+  content.innerHTML=`<div class="vc-hint">💡 แตะคาบเรียนเพื่อ <b>ขอลา</b> (≥2 วัน อนุมัติเอง · &lt;2 วัน รอครู)<br>🔁 แตะคาบที่ <b>ลาแล้ว (ขีดฆ่า)</b> ซ้ำอีกครั้ง เพื่อ <b>ยกเลิกการลา</b> — ยกเลิกเองได้ถ้าเหลือ ≥2 วัน</div>`+myStudents.map((s,i)=>{
     const entries=classDays.filter(d=>(s.schedule[d.iso]||[]).length>0);
     const tot=entries.reduce((n,d)=>n+(s.schedule[d.iso]||[]).length,0);
     const daysHtml=entries.length ? entries.map(d=>{
