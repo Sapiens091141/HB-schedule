@@ -202,6 +202,31 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .toast.show{opacity:1;transform:translateY(0);}
 .a0{background:#dbeafe;color:#1e40af;}.a1{background:#d1fae5;color:#065f46;}.a2{background:#ede9fe;color:#4c1d95;}.a3{background:#fef3c7;color:#92400e;}.a4{background:#fee2e2;color:#9b1c1c;}.a5{background:#fce7f3;color:#9d174d;}
 
+/* ===== LEAVE ===== */
+.chip.lv-appr{opacity:.5;text-decoration:line-through;}
+.chip.lv-pend{outline:2px dotted var(--wa);outline-offset:-2px;}
+.lv-tag{display:inline-block;font-size:9px;font-weight:700;padding:0 4px;border-radius:4px;margin-left:3px;vertical-align:middle;text-decoration:none;}
+.lv-tag-a{background:var(--danger);color:#fff;}
+.lv-tag-p{background:var(--wa);color:#fff;}
+.vc-slot.lv-appr{opacity:.55;text-decoration:line-through;}
+.vc-slot.lv-pend{outline:2px dotted var(--wa);outline-offset:-2px;}
+.vc-slot-badge{display:inline-block;font-size:9px;font-weight:700;padding:0 4px;border-radius:4px;margin-left:3px;vertical-align:middle;text-decoration:none;}
+.vc-slot{cursor:pointer;}
+.vc-hint{font-size:12px;color:var(--t2);background:var(--acl);border-radius:8px;padding:8px 10px;margin-bottom:12px;line-height:1.5;}
+.lv-notice{border-radius:8px;padding:10px 12px;font-size:13px;margin:6px 0 12px;font-weight:500;line-height:1.5;}
+.lv-auto{background:#d1fae5;color:#065f46;}.lv-review{background:#fef3c7;color:#92400e;}.lv-blocked{background:#fee2e2;color:#9b1c1c;}
+.leave-section-card{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px;margin-bottom:16px;}
+.leave-section-card h3{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;color:#1e40af;}
+.lv-list{display:flex;flex-direction:column;gap:8px;}
+.lv-item{background:var(--s);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.lv-main{flex:1;min-width:160px;}
+.lv-title{font-weight:600;font-size:13px;}
+.lv-sub{font-size:12px;color:var(--t2);margin-top:2px;}
+.lv-reason{font-size:12px;color:var(--t3);margin-top:3px;font-style:italic;}
+.lv-pill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap;}
+.lv-pill-a{background:#d1fae5;color:#065f46;}.lv-pill-r{background:#fee2e2;color:#9b1c1c;}
+.lv-subhead{font-size:12px;font-weight:700;color:var(--t2);margin:14px 0 6px;}
+
 /* ===== VIEWER MOBILE PAGE ===== */
 .viewer-page{display:none;flex-direction:column;min-height:100vh;background:var(--bg);}
 .viewer-page.show{display:flex;}
@@ -562,6 +587,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
           <h3>⏳ รออนุมัติ <span id="pendingCountBadge" class="pending-badge-label"></span></h3>
           <div id="pendingList"></div>
         </div>
+        <div id="leaveAdminSection" class="leave-section-card" style="display:none;">
+          <h3>📋 คำขอลา <span id="leaveCountBadge" class="pending-badge-label"></span></h3>
+          <div id="leaveAdminList"></div>
+        </div>
         <div class="admin-grid">
           <div class="admin-card">
             <h3>👥 ผู้ใช้ที่มีสิทธิ์</h3>
@@ -655,6 +684,20 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 </div>
 </div>
 
+<!-- Leave Request Modal -->
+<div class="ov" id="leaveOv" onclick="if(event.target===this)closeModal('leaveOv')">
+<div class="mo" style="width:420px;">
+  <div class="moti" id="leaveTitle">ขอลา</div>
+  <div id="leaveInfo" style="font-size:14px;font-weight:600;margin-bottom:8px;"></div>
+  <div id="leaveNotice"></div>
+  <div class="fg" id="leaveReasonWrap"><label class="fl">เหตุผล (ถ้ามี)</label><textarea class="fi" id="leaveReason" rows="2" placeholder="เช่น ไม่สบาย / ติดธุระ"></textarea></div>
+  <div class="ma">
+    <button class="btn bg2" onclick="closeModal('leaveOv')">ปิด</button>
+    <button class="btn bp" id="leaveSubmitBtn" onclick="submitLeave()">ยืนยันขอลา</button>
+  </div>
+</div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -671,6 +714,8 @@ const SLOT_SET=new Set(SLOTS);
 
 let currentUser=null,userRole=null,userStudentIds=[];
 let students=[],schedules=[];
+let leaveMap={},pendingLeave=null;
+let pendingUserCount=0,pendingLeaveCount=0;
 let curY=2026,curM=2;
 let vY=2026,vM=2; // viewer month
 let editingStudentId=null,filterTxt='';
@@ -783,7 +828,9 @@ async function loadData(){
     if(sErr)throw sErr;
     students=sData||[];
     await loadSchedulesForMonth(curY,curM);
+    await loadLeavesForMonth(curY,curM,null);
     renderAll();
+    refreshAdminLeaveIndicator();
   }catch(err){
     console.error('loadData failed:',err);
     showToast('โหลดข้อมูลไม่สำเร็จ: '+(err.message||err));
@@ -802,6 +849,26 @@ async function loadSchedulesForMonth(y,m){
 }
 
 // ============================================================
+// LEAVE — data + helpers
+// ============================================================
+async function loadLeavesForMonth(y,m,ids){
+  const{start,end}=monthRange(y,m);
+  let q=sb.from('leave_requests').select('*').gte('iso_date',start).lte('iso_date',end);
+  if(ids&&ids.length)q=q.in('student_id',ids);
+  const{data}=await q;
+  leaveMap={};
+  (data||[]).forEach(r=>{
+    if(!leaveMap[r.student_id])leaveMap[r.student_id]={};
+    if(!leaveMap[r.student_id][r.iso_date])leaveMap[r.student_id][r.iso_date]={};
+    leaveMap[r.student_id][r.iso_date][r.slot]=r;
+  });
+}
+function leaveStatus(sid,iso,slot){return((leaveMap[sid]||{})[iso]||{})[slot]||null;}
+function isApprovedLeave(sid,iso,slot){const l=leaveStatus(sid,iso,slot);return !!l&&l.status==='approved';}
+function daysUntil(iso){const t=isoToDate(iso);const n=new Date();const today=new Date(n.getFullYear(),n.getMonth(),n.getDate());return Math.round((t-today)/86400000);}
+function fmtIsoTh(iso){const dt=isoToDate(iso);return`${dt.getDate()} ${THMO[dt.getMonth()]} ${dt.getFullYear()+543} (${DTH[dt.getDay()]})`;}
+
+// ============================================================
 // VIEWER
 // ============================================================
 async function loadViewerData(){
@@ -817,6 +884,7 @@ async function loadViewerData(){
     const schMap={};
     (schData||[]).forEach(r=>{if(!schMap[r.student_id])schMap[r.student_id]={};schMap[r.student_id][r.iso_date]=r.slots;});
     myStudents.forEach(s=>{s.schedule=schMap[s.id]||{};});
+    await loadLeavesForMonth(vY,vM,userStudentIds);
     renderViewerPage(myStudents);
   }catch(err){
     console.error('loadViewerData failed:',err);
@@ -838,14 +906,20 @@ function renderViewerPage(myStudents){
     return;
   }
 
-  content.innerHTML=myStudents.map((s,i)=>{
+  content.innerHTML=`<div class="vc-hint">💡 แตะที่คาบเรียนเพื่อ <b>ขอลา</b> — แจ้งล่วงหน้า 2 วันขึ้นไปอนุมัติอัตโนมัติ, น้อยกว่านั้นรอครูพิจารณา</div>`+myStudents.map((s,i)=>{
     const entries=classDays.filter(d=>(s.schedule[d.iso]||[]).length>0);
     const tot=entries.reduce((n,d)=>n+(s.schedule[d.iso]||[]).length,0);
     const daysHtml=entries.length ? entries.map(d=>{
       const slots=s.schedule[d.iso]||[];
       return`<div class="vc-day">
         <div class="vc-day-date">${d.dayTh} ${d.date}</div>
-        <div class="vc-day-slots">${slots.map(sl=>`<span class="vc-slot vc-slot-${sl}">${sl} <span class="vc-slot-time">${SLB[sl]}</span></span>`).join('')}</div>
+        <div class="vc-day-slots">${slots.map(sl=>{
+          const lv=leaveStatus(s.id,d.iso,sl);
+          let cls='vc-slot vc-slot-'+sl,badge='';
+          if(lv&&lv.status==='approved'){cls+=' lv-appr';badge='<span class="vc-slot-badge lv-tag-a">ลา</span>';}
+          else if(lv&&lv.status==='pending'){cls+=' lv-pend';badge='<span class="vc-slot-badge lv-tag-p">รอลา</span>';}
+          return`<span class="${cls}" onclick="openLeave(${s.id},'${d.iso}','${sl}')">${sl} <span class="vc-slot-time">${SLB[sl]}</span>${badge}</span>`;
+        }).join('')}</div>
       </div>`;
     }).join('') : `<div class="vc-empty">ยังไม่มีตารางเรียนเดือนนี้</div>`;
 
@@ -1045,13 +1119,20 @@ function renderMobileSched(){
     if(totalDay===0)return ''; // ซ่อนวันที่ไม่มีเรียน เพื่อ scroll สั้นลง
     const slotsHtml=SLOTS.map(sl=>{
       const here=students.filter(s=>getSlots(s,d.iso).includes(sl));
+      let att=0,lvc=0;
       const chipsHtml=here.length
-        ? here.map(s=>`<span class="chip chip-${sl}" onclick="openEdit(${s.id})">${s.nick}</span>`).join('')
+        ? here.map(s=>{
+            const lv=leaveStatus(s.id,d.iso,sl);
+            let cls='chip chip-'+sl,tag='';
+            if(lv&&lv.status==='approved'){cls+=' lv-appr';tag='<span class="lv-tag lv-tag-a">ลา</span>';lvc++;}
+            else{att++;if(lv&&lv.status==='pending'){cls+=' lv-pend';tag='<span class="lv-tag lv-tag-p">รอลา</span>';}}
+            return`<span class="${cls}" onclick="openEdit(${s.id})">${s.nick}${tag}</span>`;
+          }).join('')
         : '<span class="msc-empty">— ไม่มี —</span>';
       return`<div class="msc-slot">
         <div class="msc-slot-label">
           <span class="msc-slot-dot" style="background:${slotColors[sl]}"></span>
-          ${sl} · ${SLB[sl]} ${here.length?`<span style="color:var(--t3);font-weight:400;margin-left:auto;">${here.length} คน</span>`:''}
+          ${sl} · ${SLB[sl]} ${here.length?`<span style="color:var(--t3);font-weight:400;margin-left:auto;">${att} คน${lvc?` · ลา ${lvc}`:''}</span>`:''}
         </div>
         <div class="msc-chips">${chipsHtml}</div>
       </div>`;
@@ -1079,7 +1160,17 @@ function renderSchedule(){
       const here=students.filter(s=>getSlots(s,d.iso).includes(sl));
       h+=`<td><div>`;
       if(!here.length)h+=`<div class="ce">—</div>`;
-      else{here.forEach(s=>{h+=`<span class="chip chip-${sl}" onclick="openEdit(${s.id})" title="${s.name}">${s.nick}</span>`;});h+=`<div class="cc">${here.length} คน</div>`;}
+      else{
+        let att=0,lvc=0;
+        here.forEach(s=>{
+          const lv=leaveStatus(s.id,d.iso,sl);
+          let cls='chip chip-'+sl,tag='';
+          if(lv&&lv.status==='approved'){cls+=' lv-appr';tag='<span class="lv-tag lv-tag-a">ลา</span>';lvc++;}
+          else{att++;if(lv&&lv.status==='pending'){cls+=' lv-pend';tag='<span class="lv-tag lv-tag-p">รอลา</span>';}}
+          h+=`<span class="${cls}" onclick="openEdit(${s.id})" title="${s.name}">${s.nick}${tag}</span>`;
+        });
+        h+=`<div class="cc">${att} คน${lvc?` · ลา ${lvc}`:''}</div>`;
+      }
       h+=`</div></td>`;
     });
     h+='</tr>';
@@ -1095,17 +1186,20 @@ function renderSummary(){
   document.getElementById('summaryGrid').innerHTML=active.map((s,i)=>{
     const entries=Object.entries(s.schedule||{}).filter(([k])=>k.startsWith(prefix)).sort((a,b)=>a[0]>b[0]?1:-1);
     const tot=entries.reduce((n,[,sl])=>n+sl.length,0);
+    let lvCnt=0;
     const tags=entries.flatMap(([iso,slots])=>{
-      // FIXED: use safe ISO parser
-      const dt=isoToDate(iso);
-      const d=dt.getDate();
-      const dow=dt.getDay();
-      return slots.map(sl=>`<span class="dtg chip-${sl}">${DTH[dow]}${d} ${sl}</span>`);
+      const dt=isoToDate(iso);const d=dt.getDate();const dow=dt.getDay();
+      return slots.map(sl=>{
+        const lv=leaveStatus(s.id,iso,sl);let style='',extra='';
+        if(lv&&lv.status==='approved'){style='opacity:.5;text-decoration:line-through;';extra=' ลา';lvCnt++;}
+        else if(lv&&lv.status==='pending'){style='outline:2px dotted var(--wa);outline-offset:-2px;';extra=' รอลา';}
+        return`<span class="dtg chip-${sl}" style="${style}">${DTH[dow]}${d} ${sl}${extra}</span>`;
+      });
     }).join('');
     return`<div class="mc"><div class="mch"><div class="mca ${avC(i)}">${ini(s)}</div>
       <div><div class="mcn">${s.nick} <span style="font-weight:400;color:var(--t2);font-size:11px;">${s.name}</span></div><div class="mcg">${s.grade}</div></div></div>
       <div class="dt">${tags||'<span style="color:var(--t3);font-size:11px;">ไม่มีตารางเดือนนี้</span>'}</div>
-      <div class="mf"><span style="color:var(--t2);font-size:12px;">รวมเดือนนี้</span><span class="mt">${tot} ครั้ง</span></div>
+      <div class="mf"><span style="color:var(--t2);font-size:12px;">รวมเดือนนี้</span><span class="mt">${tot} ครั้ง${lvCnt?` <span style="font-size:11px;color:var(--danger);font-weight:600;">· ลา ${lvCnt}</span>`:''}</span></div>
     </div>`;
   }).join('');
 }
@@ -1115,7 +1209,7 @@ function renderHeatmap(){
   const hasData=classDays.some(d=>students.some(s=>SLOTS.some(sl=>getSlots(s,d.iso).includes(sl))));
   if(!hasData){document.getElementById('hmWrap').innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้</strong></div>`;document.getElementById('hmStats').innerHTML='';return;}
   const cnts={};
-  classDays.forEach(d=>{cnts[d.iso]={};SLOTS.forEach(sl=>{cnts[d.iso][sl]=students.filter(s=>getSlots(s,d.iso).includes(sl)).length;});});
+  classDays.forEach(d=>{cnts[d.iso]={};SLOTS.forEach(sl=>{cnts[d.iso][sl]=students.filter(s=>getSlots(s,d.iso).includes(sl)&&!isApprovedLeave(s.id,d.iso,sl)).length;});});
   const mx=Math.max(...classDays.flatMap(d=>SLOTS.map(sl=>cnts[d.iso][sl])),1);
   function bg(n){if(!n)return'var(--s2)';const r=n/mx;if(r<.25)return'#bfdbfe';if(r<.5)return'#93c5fd';if(r<.75)return'#60a5fa';return'#2563eb';}
   function tc(n){return(n/mx)>.45?'#fff':'#1e40af';}
@@ -1148,9 +1242,8 @@ async function renderAdmin(){
   const pending=users.filter(u=>u.role==='pending');
   const active=users.filter(u=>u.role!=='pending');
 
-  document.getElementById('pendingDot').style.display=pending.length>0?'inline-block':'none';
-  const bnDot=document.getElementById('bnDot');
-  if(bnDot)bnDot.style.display=pending.length>0?'inline-block':'none';
+  pendingUserCount=pending.length;
+  updateAdminDots();
   const pendingSection=document.getElementById('pendingSection');
   if(pending.length>0){
     pendingSection.style.display='block';
@@ -1194,6 +1287,7 @@ async function renderAdmin(){
         </div>`;
       }).join('')
     : '<div class="empty-state">ยังไม่มีผู้ใช้ที่อนุมัติแล้ว</div>';
+  renderLeaveAdmin();
 }
 
 async function linkStudent(email){
@@ -1251,6 +1345,150 @@ async function removeUser(email){
   const{error}=await sb.from('allowed_users').delete().eq('email',email);
   if(error){showToast('เกิดข้อผิดพลาด: '+error.message);return;}
   showToast('ลบผู้ใช้แล้ว');renderAdmin();
+}
+
+// ============================================================
+// LEAVE — request (viewer) + approve (admin)
+// ============================================================
+function openLeave(sid,iso,slot){
+  const s=students.find(x=>x.id===sid);
+  const existing=leaveStatus(sid,iso,slot);
+  const dn=daysUntil(iso);
+  pendingLeave={sid,iso,slot,existing};
+  document.getElementById('leaveInfo').innerHTML=`${fmtIsoTh(iso)} · ${SLB[slot]} (${slot})${s?` — ${s.nick}`:''}`;
+  document.getElementById('leaveReason').value=existing?.reason||'';
+  const noticeEl=document.getElementById('leaveNotice');
+  const btn=document.getElementById('leaveSubmitBtn');
+  const reasonWrap=document.getElementById('leaveReasonWrap');
+  btn.style.display='';reasonWrap.style.display='';
+  if(existing){
+    document.getElementById('leaveTitle').textContent='การลานี้';
+    const st=existing.status==='approved'?'อนุมัติแล้ว ✓':(existing.status==='pending'?'รอครูพิจารณา':'ถูกปฏิเสธ');
+    const cls=existing.status==='approved'?'lv-auto':(existing.status==='pending'?'lv-review':'lv-blocked');
+    noticeEl.innerHTML=`<div class="lv-notice ${cls}">สถานะ: <b>${st}</b></div>`;
+    reasonWrap.style.display='none';
+    btn.textContent='ยกเลิกการลา';btn.className='btn bd3';btn.onclick=cancelLeave;
+  }else if(dn<0){
+    document.getElementById('leaveTitle').textContent='ขอลา';
+    noticeEl.innerHTML=`<div class="lv-notice lv-blocked">คาบนี้ผ่านไปแล้ว ลาไม่ได้</div>`;
+    reasonWrap.style.display='none';btn.style.display='none';
+  }else{
+    document.getElementById('leaveTitle').textContent='ขอลา';
+    if(dn>=2)noticeEl.innerHTML=`<div class="lv-notice lv-auto">แจ้งล่วงหน้า <b>${dn} วัน</b> — ระบบจะ <b>อนุมัติอัตโนมัติ</b></div>`;
+    else noticeEl.innerHTML=`<div class="lv-notice lv-review">แจ้งล่วงหน้า <b>${dn} วัน</b> (น้อยกว่า 2 วัน) — คำขอจะถูกส่งให้ <b>ครูพิจารณาเป็นเคสๆ ไป</b></div>`;
+    btn.textContent='ยืนยันขอลา';btn.className='btn bp';btn.onclick=submitLeave;
+  }
+  document.getElementById('leaveOv').classList.add('open');
+}
+
+async function submitLeave(){
+  if(!pendingLeave)return;
+  const{sid,iso,slot}=pendingLeave;
+  const reason=document.getElementById('leaveReason').value.trim();
+  const dn=daysUntil(iso);
+  if(dn<0){showToast('คาบนี้ผ่านไปแล้ว');return;}
+  const status=dn>=2?'approved':'pending';
+  showLoading(true);
+  const row={student_id:sid,iso_date:iso,slot,reason,status,days_notice:dn,requested_by:currentUser.email};
+  if(status==='approved'){row.decided_by='auto';row.decided_at=new Date().toISOString();}
+  const{error}=await sb.from('leave_requests').upsert(row,{onConflict:'student_id,iso_date,slot'});
+  closeModal('leaveOv');
+  if(error){showLoading(false);showToast('บันทึกไม่ได้: '+error.message);return;}
+  await reloadAfterLeave();
+  showLoading(false);
+  showToast(status==='approved'?'ลาสำเร็จ — อนุมัติอัตโนมัติ ✓':'ส่งคำขอลาแล้ว — รอครูพิจารณา');
+}
+
+async function cancelLeave(){
+  if(!pendingLeave?.existing)return;
+  showLoading(true);
+  await sb.from('leave_requests').delete().eq('id',pendingLeave.existing.id);
+  closeModal('leaveOv');
+  await reloadAfterLeave();
+  showLoading(false);
+  showToast('ยกเลิกการลาแล้ว');
+}
+
+async function reloadAfterLeave(){
+  if(userRole==='viewer'){await loadViewerData();}
+  else{await loadLeavesForMonth(curY,curM,null);renderAll();refreshAdminLeaveIndicator();}
+}
+
+// ---- admin approval ----
+function updateAdminDots(){
+  const show=(pendingUserCount>0||pendingLeaveCount>0);
+  const d=document.getElementById('pendingDot');if(d)d.style.display=show?'inline-block':'none';
+  const bn=document.getElementById('bnDot');if(bn)bn.style.display=show?'inline-block':'none';
+}
+async function refreshAdminLeaveIndicator(){
+  if(userRole!=='admin')return;
+  const{count}=await sb.from('leave_requests').select('*',{count:'exact',head:true}).eq('status','pending');
+  pendingLeaveCount=count||0;
+  updateAdminDots();
+}
+async function renderLeaveAdmin(){
+  if(userRole!=='admin')return;
+  const sec=document.getElementById('leaveAdminSection');
+  const{data}=await sb.from('leave_requests').select('*').order('created_at',{ascending:false});
+  const rows=data||[];
+  const pending=rows.filter(r=>r.status==='pending');
+  const decided=rows.filter(r=>r.status!=='pending').slice(0,30);
+  pendingLeaveCount=pending.length;updateAdminDots();
+  if(!rows.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('leaveCountBadge').textContent=pending.length?`${pending.length} รอพิจารณา`:'ไม่มีค้าง';
+  const nameOf=id=>{const s=students.find(x=>x.id===id);return s?`${s.nick} <span style="font-weight:400;color:var(--t2);font-size:11px;">${s.name}</span>`:('#'+id);};
+  let h='';
+  if(pending.length){
+    h+='<div class="lv-list">';
+    pending.forEach(r=>{
+      h+=`<div class="lv-item">
+        <div class="lv-main">
+          <div class="lv-title">${nameOf(r.student_id)}</div>
+          <div class="lv-sub">${fmtIsoTh(r.iso_date)} · ${SLB[r.slot]||''} (${r.slot}) · แจ้งล่วงหน้า ${r.days_notice} วัน</div>
+          ${r.reason?`<div class="lv-reason">"${r.reason}"</div>`:''}
+        </div>
+        <button class="approve-btn" onclick="decideLeave(${r.id},'approved')">✓ อนุมัติ</button>
+        <button class="reject-btn" onclick="decideLeave(${r.id},'rejected')">✕ ปฏิเสธ</button>
+      </div>`;
+    });
+    h+='</div>';
+  }else h+='<div class="empty-state">ไม่มีคำขอที่รอพิจารณา</div>';
+  if(decided.length){
+    h+='<div class="lv-subhead">ประวัติล่าสุด</div><div class="lv-list">';
+    decided.forEach(r=>{
+      const pill=r.status==='approved'?'lv-pill-a':'lv-pill-r';
+      const st=r.status==='approved'?(r.decided_by==='auto'?'อนุมัติ (อัตโนมัติ)':'อนุมัติ'):'ปฏิเสธ';
+      h+=`<div class="lv-item">
+        <div class="lv-main">
+          <div class="lv-title">${nameOf(r.student_id)}</div>
+          <div class="lv-sub">${fmtIsoTh(r.iso_date)} · ${SLB[r.slot]||''} (${r.slot})</div>
+          ${r.reason?`<div class="lv-reason">"${r.reason}"</div>`:''}
+        </div>
+        <span class="lv-pill ${pill}">${st}</span>
+        <button class="remove-btn" onclick="deleteLeave(${r.id})">ลบ</button>
+      </div>`;
+    });
+    h+='</div>';
+  }
+  document.getElementById('leaveAdminList').innerHTML=h;
+}
+async function decideLeave(id,status){
+  try{requireAdmin();}catch(e){return;}
+  showLoading(true);
+  await sb.from('leave_requests').update({status,decided_by:currentUser.email,decided_at:new Date().toISOString()}).eq('id',id);
+  await loadLeavesForMonth(curY,curM,null);
+  showLoading(false);
+  renderAll();renderLeaveAdmin();
+  showToast(status==='approved'?'อนุมัติแล้ว ✓':'ปฏิเสธแล้ว');
+}
+async function deleteLeave(id){
+  try{requireAdmin();}catch(e){return;}
+  if(!confirm('ลบรายการนี้ออกจากประวัติ?'))return;
+  await sb.from('leave_requests').delete().eq('id',id);
+  await loadLeavesForMonth(curY,curM,null);
+  renderAll();renderLeaveAdmin();
+  showToast('ลบแล้ว');
 }
 
 // ============================================================
@@ -1502,6 +1740,7 @@ async function changeMonth(d){
   showLoading(true);
   try{
     await loadSchedulesForMonth(curY,curM);
+    await loadLeavesForMonth(curY,curM,null);
     renderAll();
   }catch(err){
     console.error('changeMonth failed:',err);
