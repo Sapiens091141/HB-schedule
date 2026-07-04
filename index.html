@@ -1416,9 +1416,19 @@ function openLeave(sid,iso,slot){
     document.getElementById('leaveTitle').textContent='การลานี้';
     const st=existing.status==='approved'?'อนุมัติแล้ว ✓':(existing.status==='pending'?'รอครูพิจารณา':'ถูกปฏิเสธ');
     const cls=existing.status==='approved'?'lv-auto':(existing.status==='pending'?'lv-review':'lv-blocked');
-    noticeEl.innerHTML=`<div class="lv-notice ${cls}">สถานะ: <b>${st}</b></div>`;
     reasonWrap.style.display='none';
-    btn.textContent='ยกเลิกการลา';btn.className='btn bd3';btn.onclick=cancelLeave;
+    let extra='';
+    if(dn>=2){
+      extra=`<div class="lv-notice lv-auto">เหลืออีก <b>${dn} วัน</b> — ยกเลิกการลาเองได้เลย</div>`;
+      btn.style.display='';btn.textContent='ยกเลิกการลา';btn.className='btn bd3';btn.onclick=cancelLeave;
+    }else if(dn>=0){
+      extra=`<div class="lv-notice lv-blocked">เหลือ <b>${dn} วัน</b> (น้อยกว่า 2 วัน) — ยกเลิกเองไม่ได้แล้ว กรุณาแจ้งครูโดยตรง</div>`;
+      btn.style.display='none';
+    }else{
+      extra=`<div class="lv-notice lv-blocked">คาบนี้ผ่านไปแล้ว</div>`;
+      btn.style.display='none';
+    }
+    noticeEl.innerHTML=`<div class="lv-notice ${cls}">สถานะ: <b>${st}</b></div>`+extra;
   }else if(dn<0){
     document.getElementById('leaveTitle').textContent='ขอลา';
     noticeEl.innerHTML=`<div class="lv-notice lv-blocked">คาบนี้ผ่านไปแล้ว ลาไม่ได้</div>`;
@@ -1452,6 +1462,7 @@ async function submitLeave(){
 
 async function cancelLeave(){
   if(!pendingLeave?.existing)return;
+  if(daysUntil(pendingLeave.iso)<2){showToast('เหลือน้อยกว่า 2 วัน ยกเลิกเองไม่ได้ กรุณาแจ้งครู');return;}
   showLoading(true);
   await sb.from('leave_requests').delete().eq('id',pendingLeave.existing.id);
   closeModal('leaveOv');
