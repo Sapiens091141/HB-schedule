@@ -477,6 +477,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       <div class="register-link">ยังไม่มีบัญชี? <a onclick="showRegister()">ลงทะเบียน</a></div>
     </div>
     <div class="login-form" id="registerForm" style="display:none;">
+      <div class="fg"><label>ชื่อผู้ใช้ / ชื่อจริง</label><input type="text" id="regName" placeholder="เช่น ผู้ปกครองน้องเอ / ชื่อจริง"></div>
       <div class="fg"><label>อีเมล</label><input type="email" id="regEmail" placeholder="email@example.com"></div>
       <div class="fg"><label>รหัสผ่าน</label><input type="password" id="regPassword" placeholder="อย่างน้อย 6 ตัวอักษร"></div>
       <button class="login-btn" id="regBtn" onclick="doRegister()">ลงทะเบียน</button>
@@ -712,7 +713,7 @@ const SLOTS=['M10','M13','M15','M17'];
 const SLB={M10:'10:00–12:00',M13:'13:00–15:00',M15:'15:00–17:00',M17:'17:00–19:00'};
 const SLOT_SET=new Set(SLOTS);
 
-let currentUser=null,userRole=null,userStudentIds=[];
+let currentUser=null,userRole=null,userStudentIds=[],userName='';
 let students=[],schedules=[];
 let leaveMap={},pendingLeave=null;
 let pendingUserCount=0,pendingLeaveCount=0;
@@ -770,7 +771,7 @@ async function init(){
 async function onLogin(user){
   currentUser=user;
   try{
-    const{data,error}=await sb.from('allowed_users').select('role,student_ids').eq('email',user.email).single();
+    const{data,error}=await sb.from('allowed_users').select('*').eq('email',user.email).single();
     if(error||!data){
       await sb.auth.signOut();showPage('login');
       showLoginError('อีเมลนี้ไม่มีสิทธิ์เข้าถึงระบบ');return;
@@ -778,6 +779,7 @@ async function onLogin(user){
     if(data.role==='pending'){showPendingState(user.email);return;}
     userRole=data.role;
     userStudentIds=data.student_ids||[];
+    userName=data.display_name||'';
     if(userRole==='viewer'){
       await loadViewerData();
       showPage('viewer');
@@ -809,7 +811,7 @@ function showPendingState(email){
 }
 
 function setupAdminUI(){
-  document.getElementById('userEmailLabel').textContent=currentUser.email;
+  document.getElementById('userEmailLabel').textContent=userName||currentUser.email;
   const rb=document.getElementById('userRoleLabel');
   rb.textContent='Admin';rb.className='role-badge role-admin';
   document.getElementById('adminTabBtn').style.display='';
@@ -969,8 +971,10 @@ async function doLogin(){
 }
 
 async function doRegister(){
+  const name=document.getElementById('regName').value.trim();
   const email=document.getElementById('regEmail').value.trim();
   const pw=document.getElementById('regPassword').value;
+  if(!name){showLoginError('กรุณากรอกชื่อผู้ใช้');return;}
   if(!email||!pw){showLoginError('กรุณากรอกอีเมลและรหัสผ่าน');return;}
   if(pw.length<6){showLoginError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');return;}
   document.getElementById('regBtn').disabled=true;
@@ -990,7 +994,7 @@ async function doRegister(){
     if(authError.message.includes('already registered'))showLoginError('อีเมลนี้ลงทะเบียนแล้ว กรุณาเข้าสู่ระบบ');
     else showLoginError(authError.message);return;
   }
-  await sb.from('allowed_users').insert({email,role:'pending'});
+  await sb.from('allowed_users').insert({email,role:'pending',display_name:name});
   document.getElementById('regBtn').disabled=false;document.getElementById('regBtn').textContent='ลงทะเบียน';
   showLogin();showLoginSuccess('ลงทะเบียนสำเร็จ! 🎉 กรุณารอการอนุมัติจาก Admin');
 }
@@ -1032,6 +1036,7 @@ function totalInMonth(s,y,m){
 }
 function avC(i){return'a'+(i%6);}
 function ini(s){return(s.nick||s.name||'?').charAt(0).toUpperCase();}
+function escHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 let _loadingTimer=null;
 function showLoading(v){
   document.getElementById('loadingOverlay').style.display=v?'flex':'none';
@@ -1251,7 +1256,7 @@ async function renderAdmin(){
     document.getElementById('pendingList').innerHTML=pending.map(u=>{
       const safeId='r'+Math.abs(u.email.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
       return`<div class="user-row">
-        <span class="user-email">${u.email}</span>
+        <span class="user-email">${u.display_name?`<b>${escHtml(u.display_name)}</b> `:''}<span style="color:var(--t3);font-size:12px;">${escHtml(u.email)}</span></span>
         <span class="user-date">${u.created_at?new Date(u.created_at).toLocaleDateString('th-TH',{day:'numeric',month:'short'}):'—'}</span>
         <select class="approve-role-select" id="sel-${safeId}"><option value="viewer">Viewer</option><option value="admin">Admin</option></select>
         <button class="approve-btn" onclick="approveUser('${u.email}','sel-${safeId}')">✓ อนุมัติ</button>
@@ -1269,7 +1274,7 @@ async function renderAdmin(){
         const selectOpts=unlinkedStudents.map(s=>`<option value="${s.id}">${s.nick} (${s.name})</option>`).join('');
         return`<div class="user-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
           <div style="display:flex;align-items:center;gap:8px;width:100%;">
-            <span class="user-email">${u.email}</span>
+            <span class="user-email">${u.display_name?`<b>${escHtml(u.display_name)}</b> `:''}<span style="color:var(--t3);font-size:12px;">${escHtml(u.email)}</span></span>
             <span class="user-role ${u.role==='admin'?'role-admin':'role-viewer'}">${u.role}</span>
             ${u.email!==currentUser.email?`<button class="remove-btn" onclick="removeUser('${u.email}')">ลบ</button>`:'<span style="font-size:11px;color:var(--t3);">(คุณ)</span>'}
           </div>
