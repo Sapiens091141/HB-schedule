@@ -475,6 +475,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       <div class="fg"><label>รหัสผ่าน</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">เข้าสู่ระบบ</button>
       <div class="register-link">ยังไม่มีบัญชี? <a onclick="showRegister()">ลงทะเบียน</a></div>
+      <div class="register-link"><a onclick="showForgot()">ลืมรหัสผ่าน?</a></div>
     </div>
     <div class="login-form" id="registerForm" style="display:none;">
       <div class="fg"><label>ชื่อผู้ใช้ / ชื่อจริง</label><input type="text" id="regName" placeholder="เช่น ผู้ปกครองน้องเอ / ชื่อจริง"></div>
@@ -482,6 +483,17 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       <div class="fg"><label>รหัสผ่าน</label><input type="password" id="regPassword" placeholder="อย่างน้อย 6 ตัวอักษร"></div>
       <button class="login-btn" id="regBtn" onclick="doRegister()">ลงทะเบียน</button>
       <div class="register-link"><a onclick="showLogin()">← กลับไปเข้าสู่ระบบ</a></div>
+    </div>
+    <div class="login-form" id="forgotForm" style="display:none;">
+      <p style="font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.5;">กรอกอีเมลที่ลงทะเบียนไว้ ระบบจะส่งลิงก์ตั้งรหัสผ่านใหม่ไปให้ทางอีเมล</p>
+      <div class="fg"><label>อีเมล</label><input type="email" id="forgotEmail" placeholder="email@example.com"></div>
+      <button class="login-btn" id="forgotBtn" onclick="doForgot()">ส่งลิงก์รีเซ็ตรหัสผ่าน</button>
+      <div class="register-link"><a onclick="showLogin()">← กลับไปเข้าสู่ระบบ</a></div>
+    </div>
+    <div class="login-form" id="resetForm" style="display:none;">
+      <p style="font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.5;">ตั้งรหัสผ่านใหม่สำหรับบัญชีของคุณ</p>
+      <div class="fg"><label>รหัสผ่านใหม่</label><input type="password" id="resetPassword" placeholder="อย่างน้อย 6 ตัวอักษร"></div>
+      <button class="login-btn" id="resetBtn" onclick="doResetPassword()">ตั้งรหัสผ่านใหม่</button>
     </div>
     <div id="pendingCard" style="display:none;text-align:center;">
       <div style="font-size:48px;margin-bottom:16px;">⏳</div>
@@ -721,6 +733,7 @@ let curY=2026,curM=2;
 let vY=2026,vM=2; // viewer month
 let editingStudentId=null,filterTxt='';
 let pendingImport=null;
+let recoveryMode=false;
 
 // ============================================================
 // MOBILE DETECTION
@@ -754,10 +767,11 @@ async function init(){
   const now=new Date();
   curY=vY=now.getFullYear();
   curM=vM=now.getMonth();
-  const{data:{session}}=await sb.auth.getSession();
-  if(session) await onLogin(session.user);
-  else{showLoading(false);showPage('login');}
+  // มาจากลิงก์รีเซ็ตรหัสผ่านในอีเมล → แสดงฟอร์มตั้งรหัสใหม่ ไม่เข้าระบบปกติ
+  recoveryMode=location.hash.includes('type=recovery');
   sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){recoveryMode=true;showLoading(false);showPage('login');showResetForm();return;}
+    if(recoveryMode)return; // อยู่ระหว่างตั้งรหัสใหม่ ไม่ต้องเข้าระบบ
     // ป้องกัน re-load ซ้ำตอน TOKEN_REFRESHED / INITIAL_SESSION ถ้ายังเป็น user เดิม
     if(session && currentUser && session.user.id===currentUser.id){
       currentUser=session.user;
@@ -766,6 +780,10 @@ async function init(){
     if(session) await onLogin(session.user);
     else{currentUser=null;userRole=null;showPage('login');}
   });
+  if(recoveryMode){showLoading(false);showPage('login');showResetForm();return;}
+  const{data:{session}}=await sb.auth.getSession();
+  if(session) await onLogin(session.user);
+  else{showLoading(false);showPage('login');}
 }
 
 async function onLogin(user){
@@ -1008,8 +1026,36 @@ async function doLogout(){
 
 function showLoginError(msg){const el=document.getElementById('loginError');el.textContent=msg;el.classList.toggle('show',!!msg);document.getElementById('loginSuccess').classList.remove('show');}
 function showLoginSuccess(msg){const el=document.getElementById('loginSuccess');el.textContent=msg;el.classList.toggle('show',!!msg);document.getElementById('loginError').classList.remove('show');}
-function showLogin(){document.getElementById('loginForm').style.display='';document.getElementById('registerForm').style.display='none';document.getElementById('pendingCard').style.display='none';showLoginError('');showLoginSuccess('');}
-function showRegister(){document.getElementById('loginForm').style.display='none';document.getElementById('registerForm').style.display='';document.getElementById('pendingCard').style.display='none';showLoginError('');showLoginSuccess('');}
+function hideAllAuthForms(){['loginForm','registerForm','forgotForm','resetForm','pendingCard'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});}
+function showLogin(){hideAllAuthForms();document.getElementById('loginForm').style.display='';showLoginError('');showLoginSuccess('');}
+function showRegister(){hideAllAuthForms();document.getElementById('registerForm').style.display='';showLoginError('');showLoginSuccess('');}
+function showForgot(){hideAllAuthForms();document.getElementById('forgotForm').style.display='';showLoginError('');showLoginSuccess('');}
+function showResetForm(){hideAllAuthForms();document.getElementById('resetForm').style.display='';showLoginError('');showLoginSuccess('');}
+
+async function doForgot(){
+  const email=document.getElementById('forgotEmail').value.trim();
+  if(!email){showLoginError('กรุณากรอกอีเมล');return;}
+  const btn=document.getElementById('forgotBtn');btn.disabled=true;btn.textContent='กำลังส่ง...';
+  const redirectTo=location.href.split('#')[0].split('?')[0];
+  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
+  btn.disabled=false;btn.textContent='ส่งลิงก์รีเซ็ตรหัสผ่าน';
+  if(error){showLoginError(error.message);return;}
+  showLogin();showLoginSuccess('ส่งลิงก์รีเซ็ตไปที่อีเมลแล้ว 📧 กรุณาเช็คกล่องจดหมาย (รวมถึง Junk/Spam)');
+}
+
+async function doResetPassword(){
+  const pw=document.getElementById('resetPassword').value;
+  if(!pw||pw.length<6){showLoginError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');return;}
+  const btn=document.getElementById('resetBtn');btn.disabled=true;btn.textContent='กำลังบันทึก...';
+  const{error}=await sb.auth.updateUser({password:pw});
+  btn.disabled=false;btn.textContent='ตั้งรหัสผ่านใหม่';
+  if(error){showLoginError('ตั้งรหัสผ่านไม่สำเร็จ: '+(error.message||error));return;}
+  recoveryMode=false;
+  try{history.replaceState(null,'',location.pathname);}catch(e){}
+  await sb.auth.signOut();
+  currentUser=null;userRole=null;userStudentIds=[];
+  showLogin();showLoginSuccess('ตั้งรหัสผ่านใหม่สำเร็จ ✓ กรุณาเข้าสู่ระบบด้วยรหัสใหม่');
+}
 
 // ============================================================
 // HELPERS
