@@ -22,7 +22,26 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Supabase client library — pinned version, loaded with a fallback CDN.
+     A failed/slow load no longer leaves an endless spinner: __sbState lets the
+     app show a retry screen instead (see boot() at the bottom of the page). -->
+<script>
+(function(){
+  window.__sbState='loading';
+  function done(ok){window.__sbState=ok?'ready':'failed';if(window.__sbOnState)window.__sbOnState();}
+  function load(url,onfail){
+    var s=document.createElement('script');
+    s.src=url;
+    s.onload=function(){done(true);};
+    s.onerror=onfail;
+    document.head.appendChild(s);
+  }
+  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0',function(){
+    // primary CDN failed → try the fallback; if that fails too, mark as failed
+    load('https://unpkg.com/@supabase/supabase-js@2.110.0',function(){done(false);});
+  });
+})();
+</script>
 <style>
 :root{--bg:#f7f6f2;--s:#fff;--s2:#f0efe9;--bd:#e2e0d8;--t:#1a1916;--t2:#6b6960;--t3:#9e9b90;--ac:#2563a8;--acl:#e8f0fb;--ac2:#0e7c5a;--pu:#5b21b6;--wa:#b45309;--danger:#9b1c1c;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -716,7 +735,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 <script>
 const SUPABASE_URL='https://zpsarnenawaxmhkgjwwg.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpwc2FybmVuYXdheG1oa2dqd3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MjM4NjksImV4cCI6MjA5MzA5OTg2OX0.0Rxlksks6V0gjfwOY2Ld-qB-bySMVPZcyyb3bqT9lt8';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let sb=null; // created in boot() once the Supabase library has finished loading
 
 const THMO=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const DTH={0:'อา',1:'จ',2:'อ',3:'พ',4:'พฤ',5:'ศ',6:'ส'};
@@ -1817,7 +1836,34 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-init();
+// ============================================================
+// BOOT — wait for the Supabase library, then start the app.
+// If the library can't load from any CDN, show a retry screen
+// instead of leaving the loading spinner running forever.
+// ============================================================
+function showFatal(){
+  const ov=document.getElementById('loadingOverlay');
+  if(!ov)return;
+  ov.setAttribute('data-state','fatal');
+  ov.style.display='flex';
+  ov.innerHTML=`<div style="text-align:center;padding:24px;max-width:320px;">
+    <div style="font-size:34px;margin-bottom:10px;">📡</div>
+    <div style="font-size:16px;color:#1a1916;font-weight:600;margin-bottom:8px;">เชื่อมต่อไม่สำเร็จ</div>
+    <div style="font-size:13px;color:#6b6960;line-height:1.6;margin-bottom:18px;">โหลดแอพไม่สำเร็จ อาจเป็นที่สัญญาณอินเทอร์เน็ต<br>กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง</div>
+    <button onclick="location.reload()" style="background:#2563a8;color:#fff;border:none;border-radius:10px;padding:11px 26px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;">ลองใหม่</button>
+  </div>`;
+}
+function boot(){
+  if(window.__sbState==='ready'){
+    sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    init();
+  }else if(window.__sbState==='failed'){
+    showFatal();
+  }else{
+    window.__sbOnState=boot; // library still loading — resume when it's ready
+  }
+}
+boot();
 </script>
 </body>
 </html>
