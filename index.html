@@ -788,7 +788,9 @@ async function init(){
   curM=vM=now.getMonth();
   // มาจากลิงก์รีเซ็ตรหัสผ่านในอีเมล → แสดงฟอร์มตั้งรหัสใหม่ ไม่เข้าระบบปกติ
   recoveryMode=location.hash.includes('type=recovery');
-  sb.auth.onAuthStateChange(async(event,session)=>{
+  // ห้าม await งาน Supabase ในตัว callback — callback รันระหว่าง auth ถือ lock อยู่
+  // การยิง query ข้างใน (ซึ่งภายในเรียก getSession อีกที) เสี่ยง deadlock ค้างทั้งแอพ
+  sb.auth.onAuthStateChange((event,session)=>{
     if(event==='PASSWORD_RECOVERY'){recoveryMode=true;showLoading(false);showPage('login');showResetForm();return;}
     if(recoveryMode)return; // อยู่ระหว่างตั้งรหัสใหม่ ไม่ต้องเข้าระบบ
     // ป้องกัน re-load ซ้ำตอน TOKEN_REFRESHED / INITIAL_SESSION ถ้ายังเป็น user เดิม
@@ -796,16 +798,31 @@ async function init(){
       currentUser=session.user;
       return;
     }
-    if(session) await onLogin(session.user);
-    else{currentUser=null;userRole=null;showPage('login');}
+    setTimeout(()=>{
+      if(session)onLogin(session.user);
+      else{currentUser=null;userRole=null;showPage('login');}
+    },0);
   });
   if(recoveryMode){showLoading(false);showPage('login');showResetForm();return;}
-  const{data:{session}}=await sb.auth.getSession();
+  // มือถือที่ปิดแอพนาน token หมดอายุ → getSession ต้องรอ refresh ผ่านเน็ต ซึ่งค้างได้
+  // ถ้าเกิน 10 วิ ให้พาไปหน้า login ก่อน — ถ้า auth ฟื้นทีหลัง onAuthStateChange จะพาเข้าเอง
+  let session=null;
+  try{
+    const{data}=await withTimeout(sb.auth.getSession(),10000,'getSession');
+    session=data&&data.session;
+  }catch(err){
+    console.warn('getSession ช้าหรือค้าง — แสดงหน้า login ไปก่อน:',err.message||err);
+  }
   if(session) await onLogin(session.user);
   else{showLoading(false);showPage('login');}
 }
 
+let _loginInFlight=false;
 async function onLogin(user){
+  // กันเรียกซ้ำตอนบูต: getSession() กับ event จาก onAuthStateChange มาพร้อมๆ กัน
+  if(_loginInFlight)return;
+  if(currentUser&&currentUser.id===user.id&&userRole)return;
+  _loginInFlight=true;
   currentUser=user;
   try{
     const{data,error}=await sb.from('allowed_users').select('*').eq('email',user.email).single();
@@ -830,6 +847,7 @@ async function onLogin(user){
     showToast('เข้าสู่ระบบไม่สำเร็จ: '+(err.message||err));
     showPage('login');
   }finally{
+    _loginInFlight=false;
     showLoading(false);
   }
 }
@@ -1104,15 +1122,32 @@ function ini(s){return(s.nick||s.name||'?').charAt(0).toUpperCase();}
 function escHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 let _loadingTimer=null;
 function showLoading(v){
-  document.getElementById('loadingOverlay').style.display=v?'flex':'none';
+  const ov=document.getElementById('loadingOverlay');
+  if(v&&ov.getAttribute('data-state')==='fatal'){
+    // overlay เคยถูกแทนที่ด้วยจอ "ลองใหม่" — คืนร่าง spinner ก่อนใช้ซ้ำ
+    ov.removeAttribute('data-state');
+    ov.innerHTML='<div class="spinner"></div><div class="loading-text">กำลังโหลด...</div>';
+  }
+  ov.style.display=v?'flex':'none';
   if(_loadingTimer){clearTimeout(_loadingTimer);_loadingTimer=null;}
   if(v){
     _loadingTimer=setTimeout(()=>{
-      document.getElementById('loadingOverlay').style.display='none';
       _loadingTimer=null;
-      showToast('โหลดข้อมูลนานเกินไป — กรุณาลองอีกครั้ง');
-    },25000);
+      const inApp=document.getElementById('appPage').classList.contains('show')
+        ||document.getElementById('viewerPage').classList.contains('show')
+        ||document.getElementById('loginPage').style.display!=='none';
+      if(inApp){
+        ov.style.display='none';
+        showToast('โหลดข้อมูลนานเกินไป — กรุณาลองอีกครั้ง');
+      }else{
+        // ยังไม่มีหน้าไหนแสดง — ถ้าแค่ซ่อน overlay จะเหลือจอขาวล้วน ต้องให้ผู้ใช้กดลองใหม่ได้
+        showFatal('การเชื่อมต่อช้า','โหลดข้อมูลนานเกินไป อาจเป็นที่สัญญาณอินเทอร์เน็ต<br>กด "ลองใหม่" เพื่อโหลดอีกครั้ง');
+      }
+    },15000);
   }
+}
+function withTimeout(promise,ms,label){
+  return Promise.race([promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error((label||'operation')+' timed out')),ms))]);
 }
 function showPage(p){
   document.getElementById('loginPage').style.display=p==='login'?'flex':'none';
@@ -1841,26 +1876,32 @@ function showToast(msg){
 // If the library can't load from any CDN, show a retry screen
 // instead of leaving the loading spinner running forever.
 // ============================================================
-function showFatal(){
+function showFatal(title,desc){
   const ov=document.getElementById('loadingOverlay');
   if(!ov)return;
   ov.setAttribute('data-state','fatal');
   ov.style.display='flex';
   ov.innerHTML=`<div style="text-align:center;padding:24px;max-width:320px;">
     <div style="font-size:34px;margin-bottom:10px;">📡</div>
-    <div style="font-size:16px;color:#1a1916;font-weight:600;margin-bottom:8px;">เชื่อมต่อไม่สำเร็จ</div>
-    <div style="font-size:13px;color:#6b6960;line-height:1.6;margin-bottom:18px;">โหลดแอพไม่สำเร็จ อาจเป็นที่สัญญาณอินเทอร์เน็ต<br>กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง</div>
+    <div style="font-size:16px;color:#1a1916;font-weight:600;margin-bottom:8px;">${title||'เชื่อมต่อไม่สำเร็จ'}</div>
+    <div style="font-size:13px;color:#6b6960;line-height:1.6;margin-bottom:18px;">${desc||'โหลดแอพไม่สำเร็จ อาจเป็นที่สัญญาณอินเทอร์เน็ต<br>กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง'}</div>
     <button onclick="location.reload()" style="background:#2563a8;color:#fff;border:none;border-radius:10px;padding:11px 26px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;">ลองใหม่</button>
   </div>`;
 }
 function boot(){
-  if(window.__sbState==='ready'){
-    sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  if(window.__bootTimer){clearTimeout(window.__bootTimer);window.__bootTimer=null;}
+  if(window.__sbState==='ready'&&typeof supabase!=='undefined'){
+    // lock แบบ no-op: ปิด navigator.locks ของ supabase-js — แท็บ/PWA ที่ถูกมือถือ freeze
+    // อาจถือ lock ค้างไว้ ทำให้ getSession ของหน้าที่เปิดใหม่รอไม่มีวันจบ
+    sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{lock:(_n,_t,fn)=>fn()}});
     init();
-  }else if(window.__sbState==='failed'){
+  }else if(window.__sbState==='failed'||window.__sbState==='ready'){
+    // CDN ล้มทั้งคู่ หรือ onload ยิงแต่ไม่ได้ไลบรารีจริง (เช่นโดน captive portal ส่งหน้า 200 ปลอม)
     showFatal();
   }else{
     window.__sbOnState=boot; // library still loading — resume when it's ready
+    // เน็ตมือถือมัก "ค้าง" โดย onerror ไม่ยิง — เกิน 20 วิ ให้ขึ้นจอลองใหม่แทนหมุนค้าง
+    window.__bootTimer=setTimeout(()=>{if(window.__sbState!=='ready')showFatal();},20000);
   }
 }
 boot();
