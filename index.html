@@ -270,10 +270,18 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .ll-sel{max-width:240px;}
 .ll-q{flex:1;min-width:180px;max-width:340px;}
 .ll-count{font-size:11px;color:var(--t3);margin-bottom:10px;}
-.ll-group{margin-bottom:18px;}
-.ll-shead{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap;}
+.ll-group{background:var(--s);border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;overflow:hidden;}
+.ll-shead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 13px;cursor:pointer;transition:background .15s;}
+.ll-shead:hover{background:var(--bg);}
+.ll-caret{font-size:10px;color:var(--t3);flex-shrink:0;transition:transform .18s;display:inline-block;}
+.ll-group.open .ll-caret{transform:rotate(90deg);}
+.ll-group.open .ll-shead{border-bottom:1px solid var(--bd);}
 .ll-sname{font-size:14px;font-weight:700;flex:1;min-width:0;}
 .ll-ssub{font-size:11px;color:var(--t3);font-weight:400;}
+.ll-cnt{font-size:11px;font-weight:700;color:var(--ac);background:var(--acl);padding:2px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.ll-last{font-size:11px;color:var(--t3);white-space:nowrap;flex-shrink:0;}
+.ll-body{display:none;padding:10px 13px 4px;background:var(--bg);}
+.ll-group.open .ll-body{display:block;}
 .ll-item{background:var(--s);border:1px solid var(--bd);border-radius:11px;padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:box-shadow .15s;}
 .ll-item:hover{box-shadow:0 2px 10px rgba(0,0,0,.06);}
 .ll-head{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px;}
@@ -283,7 +291,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .ll-meta{font-size:11px;color:var(--t3);margin-top:5px;}
 .ll-latest{font-size:9px;font-weight:700;background:var(--ac2);color:#fff;padding:1px 7px;border-radius:20px;white-space:nowrap;}
 /* ปุ่มสร้างภาพสรุป + modal พรีวิว */
-.ll-report{margin-left:auto;flex-shrink:0;background:var(--acl);color:var(--ac);border:1px solid #bfdbfe;border-radius:20px;
+.ll-report{flex-shrink:0;background:var(--acl);color:var(--ac);border:1px solid #bfdbfe;border-radius:20px;
   padding:4px 11px;font-family:'Sarabun',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;}
 .ll-report:hover{background:var(--ac);color:#fff;border-color:var(--ac);}
 .rp-wrap{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px;max-height:58vh;overflow:auto;text-align:center;}
@@ -448,7 +456,11 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
   .chip-log{padding:2px 3px 2px 6px;font-size:13px;opacity:.65;}
   .ll-sel,.ll-q{max-width:none;width:100%;}
   .sheet-sub{gap:10px;}
-  .ll-report{font-size:10px;padding:3px 9px;}
+  .ll-report{font-size:12px;padding:4px 8px;}
+  .ll-rlabel{display:none;}
+  .ll-last{display:none;}
+  .ll-shead{padding:9px 11px;gap:7px;}
+  .ll-body{padding:8px 9px 3px;}
   .sheet-pg input{width:46px;}
   .vc-latest{margin:10px 12px 0;}
 
@@ -890,6 +902,7 @@ let students=[],schedules=[];
 let leaveMap={},pendingLeave=null;
 let logMap={},latestLogMap={},pendingLog=null;
 let lessonFeed=null,lessonFeedByStudent={};   // แคชของแท็บ "บันทึกการเรียน"
+let openLessonStudent=null;                   // นักเรียนที่กางประวัติอยู่ (กางได้ทีละคน)
 let pendingUserCount=0,pendingLeaveCount=0;
 let curY=2026,curM=2;
 let vY=2026,vM=2; // viewer month
@@ -1568,6 +1581,19 @@ function renderLessonsDebounced(){
   _lessonSearchTimer=setTimeout(renderLessons,180);
 }
 
+// กางประวัติได้ทีละคน — กดคนใหม่ คนเดิมพับเอง เพื่อไม่ให้รายการกลับไปรก
+// สลับด้วย class ตรงๆ ไม่ re-render ทั้งก้อน ตำแหน่ง scroll จึงไม่กระโดด
+function toggleLessonStudent(sid){
+  const wrap=document.getElementById('lessonsList');
+  if(!wrap)return;
+  const me=wrap.querySelector(`.ll-group[data-sid="${sid}"]`);
+  const willOpen=!(me&&me.classList.contains('open'));
+  wrap.querySelectorAll('.ll-group.open').forEach(el=>el.classList.remove('open'));
+  if(willOpen&&me){me.classList.add('open');openLessonStudent=sid;
+    me.scrollIntoView({block:'nearest',behavior:'smooth'});}
+  else openLessonStudent=null;
+}
+
 async function renderLessons(){
   if(userRole!=='admin')return;
   const sel=document.getElementById('lessonStudentFilter');
@@ -1611,16 +1637,23 @@ async function renderLessons(){
     return{sid:parseInt(k),list,newest:key(list[0])};
   }).sort((a,b)=>a.newest<b.newest?1:-1);
 
-  wrap.innerHTML=`<div class="ll-count">${rows.length} บันทึก · ${groups.length} คน${capped?' · แสดง 300 รายการล่าสุด (เลือกชื่อนักเรียนเพื่อดูทั้งหมดของคนนั้น)':''}</div>`
+  // เหลือกลุ่มเดียว (เลือกจาก dropdown / ค้นหาจนแคบ) → กางให้เลย ไม่ต้องกดซ้ำ
+  if(groups.length===1)openLessonStudent=groups[0].sid;
+  wrap.innerHTML=`<div class="ll-count">${rows.length} บันทึก · ${groups.length} คน${capped?' · แสดง 300 รายการล่าสุด (เลือกชื่อนักเรียนเพื่อดูทั้งหมดของคนนั้น)':''} · แตะชื่อเพื่อดูประวัติ</div>`
     +groups.map(g=>{
     const idx=students.findIndex(x=>x.id===g.sid);
     const s=idx>=0?students[idx]:null;
-    return`<div class="ll-group">
-      <div class="ll-shead">
+    const ld=isoToDate(g.list[0].iso_date);
+    return`<div class="ll-group${openLessonStudent===g.sid?' open':''}" data-sid="${g.sid}">
+      <div class="ll-shead" onclick="toggleLessonStudent(${g.sid})">
+        <span class="ll-caret">▶</span>
         <div class="av ${avC(idx<0?0:idx)}">${s?ini(s):'?'}</div>
         <div class="ll-sname">${escHtml(s?s.nick:'#'+g.sid)} <span class="ll-ssub">${s?escHtml(s.name)+' · '+escHtml(s.grade):''}</span></div>
-        <button class="ll-report" onclick="openMonthlyReport(${g.sid})">📤 ภาพสรุป ${THMO[curM]} ${curY+543}</button>
+        <span class="ll-cnt">${g.list.length} บันทึก</span>
+        <span class="ll-last">ล่าสุด ${ld.getDate()} ${THMO[ld.getMonth()]}</span>
+        <button class="ll-report" title="ภาพสรุปเดือน ${THMO[curM]} ${curY+543}" onclick="event.stopPropagation();openMonthlyReport(${g.sid})">📤<span class="ll-rlabel"> ภาพสรุปเดือนนี้</span></button>
       </div>
+      <div class="ll-body">
       ${g.list.map((r,i)=>`<div class="ll-item" onclick="openLessonLog(${r.student_id},'${r.iso_date}','${r.slot}')">
         <div class="ll-head">
           ${i===0?'<span class="ll-latest">ล่าสุด</span>':''}
@@ -1631,6 +1664,7 @@ async function renderLessons(){
         <div class="ll-content">${logBodyHtml(r)||'<span style="color:var(--t3);font-size:12px;">(ยังไม่ได้ระบุรายละเอียด)</span>'}</div>
         <div class="ll-meta">${escHtml(r.updated_by||r.created_by||'')}${r.updated_at?' · '+new Date(r.updated_at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</div>
       </div>`).join('')}
+      </div>
     </div>`;
   }).join('');
 }
