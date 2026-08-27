@@ -297,7 +297,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .rp-wrap{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px;max-height:58vh;overflow:auto;text-align:center;}
 .rp-wrap canvas{max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.12);}
 .rp-note{font-size:11px;color:var(--t3);margin-top:8px;line-height:1.6;}
-/* ฟอร์ม — บล็อกชีท (เพิ่ม/ลบได้หลายแผ่น) */
+/* ฟอร์ม — บล็อกชีท (เพิ่ม/ลบได้หลายชีท · 1 ชีท = 1 คลิปวิดิโอ) */
 .sheet-row{border:1px solid var(--bd);border-radius:10px;padding:10px 11px;margin-bottom:8px;background:var(--bg);position:relative;}
 .sheet-head{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
 .sheet-n{font-size:11px;font-weight:700;color:var(--t3);flex-shrink:0;}
@@ -1832,7 +1832,7 @@ async function drawMonthlyReport(student,logs,idx){
   const tiles=[
     ['เข้าเรียน',String(st.sessions),'ครั้ง',RP.ac],
     ['รวมเวลาเรียน',(Math.round(hrs*10)/10).toString(),'ชั่วโมง',RP.ac2],
-    ['ชีทที่เรียน',String(st.sheets),'แผ่น',RP.wa]
+    ['ชีทที่เรียน',String(st.sheets),'ชีท',RP.wa]
   ];
   const tw=(CW-16)/3;
   tiles.forEach((t,i)=>{
@@ -1854,7 +1854,7 @@ async function drawMonthlyReport(student,logs,idx){
     if(pct>0){c.fillStyle=col; rpRect(c,P,y+13,Math.max(7,CW*pct),7,4); c.fill();}
     y+=27;
   };
-  if(BARS){ bar('วิดิโอที่ดูจบ',st.vid,st.sheets,'แผ่น',RP.ac2);
+  if(BARS){ bar('วิดิโอที่ดูจบ',st.vid,st.sheets,'คลิป',RP.ac2);
             bar('โจทย์ที่ทำ',st.pd,st.pt,'หน้า',RP.ac); y+=0; }
 
   // หัวข้อรายการ
@@ -2192,7 +2192,7 @@ function sheetRowHtml(sh){
       <button type="button" class="sheet-del" title="ลบชีทนี้" onclick="removeSheetRow(this)">\u2715</button>
     </div>
     <div class="sheet-sub">
-      <label class="sheet-chk"><input type="checkbox" class="sheet-vid"${sh.video_done?' checked':''}> วิดิโอจบ</label>
+      <label class="sheet-chk" title="1 ชีท = 1 คลิป · ติ๊กเมื่อดูจบแล้วเท่านั้น"><input type="checkbox" class="sheet-vid"${sh.video_done?' checked':''}> ดูวิดิโอจบแล้ว</label>
       <span class="sheet-pg">โจทย์
         <input type="number" min="0" class="sheet-pd" placeholder="–" value="${sh.pages_done??''}"> /
         <input type="number" min="0" class="sheet-pt" placeholder="–" value="${sh.pages_total??''}"> หน้า</span>
@@ -2248,7 +2248,7 @@ function openLessonLog(sid,iso,slot){
   wrap.innerHTML='';
   const sheets=sheetList(existing);
   if(sheets.length)sheets.forEach(sh=>addSheetRow(sh));
-  else addSheetRow();                       // เปิดมาให้ชีทเปล่า 1 แผ่นเสมอ
+  else addSheetRow();                       // เปิดมาให้ชีทเปล่า 1 ชีทเสมอ
   document.getElementById('lessonHw').value=existing?.homework||'';
   document.getElementById('lessonNote').value=existing?.teacher_note||'';
   document.getElementById('lessonDeleteBtn').style.display=existing?'':'none';
