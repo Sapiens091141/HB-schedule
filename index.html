@@ -851,6 +851,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 
   <div class="fg">
     <label class="fl">ชีทที่เรียน</label>
+    <datalist id="sheetNameList"></datalist>
     <div id="lessonSheets"></div>
     <button type="button" class="sheet-add" onclick="addSheetRow()">+ เพิ่มชีท</button>
   </div>
@@ -905,6 +906,7 @@ let leaveMap={},pendingLeave=null;
 let logMap={},latestLogMap={},pendingLog=null;
 let lessonFeed=null,lessonFeedByStudent={};   // แคชของแท็บ "บันทึกการเรียน"
 let openLessonStudent=null;                   // นักเรียนที่กางประวัติอยู่ (กางได้ทีละคน)
+let sheetNames=null;                          // แคชชื่อชีทที่เคยใช้ (autocomplete)
 let pendingUserCount=0,pendingLeaveCount=0;
 let curY=2026,curM=2;
 let vY=2026,vM=2; // viewer month
@@ -1135,7 +1137,46 @@ async function loadLessonFeedForStudent(sid,limit=500){
   lessonFeedByStudent[sid]=data||[];
   return lessonFeedByStudent[sid];
 }
-function invalidateLessonCaches(){lessonFeed=null;lessonFeedByStudent={};}
+function invalidateLessonCaches(){lessonFeed=null;lessonFeedByStudent={};sheetNames=null;}
+
+// ---- autocomplete ชื่อชีท ----
+// ชื่อชีทเป็นข้อความอิสระ และสถิติยุบตามชื่อแบบตรงตัว (ดู sheetsByName) พิมพ์ต่างกันนิดเดียว
+// เช่น "MH-XTC01" กับ "MH-XTC 01" จะกลายเป็นคนละชีท → ให้เลือกจากชื่อที่เคยใช้แทนการพิมพ์ใหม่
+function sheetNamesFromMemory(){
+  const seen=[];
+  const eat=r=>sheetList(r).forEach(sh=>{const n=String(sh&&sh.name||'').trim();if(n&&!seen.includes(n))seen.push(n);});
+  (lessonFeed||[]).forEach(eat);
+  Object.values(lessonFeedByStudent).forEach(list=>(list||[]).forEach(eat));
+  Object.values(logMap||{}).forEach(byIso=>Object.values(byIso).forEach(bySlot=>Object.values(bySlot).forEach(eat)));
+  return seen;
+}
+async function loadSheetNames(){
+  if(sheetNames)return sheetNames;
+  const{data,error}=await sb.from('lesson_logs').select('sheets')
+    .order('iso_date',{ascending:false}).limit(500);
+  if(error){console.warn('loadSheetNames:',error.message||error);return sheetNamesFromMemory();}
+  const seen=[];
+  (data||[]).forEach(r=>sheetList(r).forEach(sh=>{
+    const n=String(sh&&sh.name||'').trim();
+    if(n&&!seen.includes(n))seen.push(n);      // เรียงตามวันที่ใหม่→เก่า ชีทที่เพิ่งใช้จึงอยู่บนสุด
+  }));
+  sheetNames=seen.slice(0,300);
+  return sheetNames;
+}
+// รวมชื่อจาก DB กับที่มีในหน่วยความจำเสมอ — ห้ามเขียนทับด้วยผลลัพธ์จาก DB อย่างเดียว
+// เพราะ query อาจคืน [] โดยไม่มี error (เช่นตอน RLS บล็อก) แล้วชื่อที่ใช้ได้จะหายไปหมด
+function sheetNameOptions(){
+  const out=[];
+  const push=n=>{n=String(n||'').trim();if(n&&!out.includes(n))out.push(n);};
+  (sheetNames||[]).forEach(push);
+  sheetNamesFromMemory().forEach(push);
+  return out.slice(0,300);
+}
+function fillSheetNameList(){
+  const dl=document.getElementById('sheetNameList');
+  if(!dl)return;
+  dl.innerHTML=sheetNameOptions().map(n=>`<option value="${escHtml(n)}"></option>`).join('');
+}
 
 // ============================================================
 // VIEWER
@@ -2219,7 +2260,8 @@ function sheetRowHtml(sh){
   return `<div class="sheet-row">
     <div class="sheet-head">
       <span class="sheet-n"></span>
-      <input class="fi sheet-name" type="text" placeholder="ชื่อชีท เช่น ตรีโกณมิติ เล่ม 3" value="${escHtml(sh.name||'')}">
+      <input class="fi sheet-name" type="text" list="sheetNameList" autocomplete="off" spellcheck="false"
+             placeholder="พิมพ์เพื่อเลือกชีทที่เคยใช้ เช่น MH-XTC ตรีโกณมิติ" value="${escHtml(sh.name||'')}">
       <button type="button" class="sheet-del" title="ลบชีทนี้" onclick="removeSheetRow(this)">\u2715</button>
     </div>
     <div class="sheet-sub">
@@ -2288,6 +2330,9 @@ function openLessonLog(sid,iso,slot){
       +(existing.updated_at?` · ${new Date(existing.updated_at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`:'')
     : '';
   document.getElementById('lessonOv').classList.add('open');
+  // เติมจากที่มีในหน่วยความจำก่อนเพื่อให้เลือกได้ทันที แล้วค่อยอัปเดตจาก DB
+  fillSheetNameList();
+  loadSheetNames().then(()=>fillSheetNameList()).catch(()=>{});
   setTimeout(()=>{try{wrap.querySelector('.sheet-name').focus();}catch(e){}},60);
 }
 
