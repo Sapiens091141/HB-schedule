@@ -279,6 +279,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .ll-sname{font-size:14px;font-weight:700;flex:1;min-width:0;}
 .ll-ssub{font-size:11px;color:var(--t3);font-weight:400;}
 .ll-cnt{font-size:11px;font-weight:700;color:var(--ac);background:var(--acl);padding:2px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.ll-pend{font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;padding:1px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;cursor:help;}
 .ll-last{font-size:11px;color:var(--t3);white-space:nowrap;flex-shrink:0;}
 .ll-body{display:none;padding:10px 13px 4px;background:var(--bg);}
 .ll-group.open .ll-body{display:block;}
@@ -317,7 +318,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .sh-name{font-weight:600;}
 .sh-tag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;white-space:nowrap;}
 .sh-vid-y{background:#d1fae5;color:#065f46;}
-.sh-vid-n{background:var(--s2);color:var(--t3);}
+.sh-vid-n{background:#fef3c7;color:#92400e;}
 .sh-pg{font-size:11px;font-weight:600;color:var(--t2);white-space:nowrap;}
 .lg-time{font-size:11px;font-weight:700;color:var(--ac);background:var(--acl);padding:1px 7px;border-radius:20px;white-space:nowrap;}
 .lg-block{margin-top:5px;font-size:12px;color:var(--t2);line-height:1.55;white-space:pre-wrap;word-break:break-word;}
@@ -458,6 +459,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
   .sheet-sub{gap:10px;}
   .ll-report{font-size:12px;padding:4px 8px;}
   .ll-rlabel{display:none;}
+  .ll-plabel{display:none;}
   .ll-last{display:none;}
   .ll-shead{padding:9px 11px;gap:7px;}
   .ll-body{padding:8px 9px 3px;}
@@ -1644,12 +1646,14 @@ async function renderLessons(){
     const idx=students.findIndex(x=>x.id===g.sid);
     const s=idx>=0?students[idx]:null;
     const ld=isoToDate(g.list[0].iso_date);
+    const pend=pendingVideos(g.list);
     return`<div class="ll-group${openLessonStudent===g.sid?' open':''}" data-sid="${g.sid}">
       <div class="ll-shead" onclick="toggleLessonStudent(${g.sid})">
         <span class="ll-caret">▶</span>
         <div class="av ${avC(idx<0?0:idx)}">${s?ini(s):'?'}</div>
         <div class="ll-sname">${escHtml(s?s.nick:'#'+g.sid)} <span class="ll-ssub">${s?escHtml(s.name)+' · '+escHtml(s.grade):''}</span></div>
         <span class="ll-cnt">${g.list.length} บันทึก</span>
+        ${pend.length?`<span class="ll-pend" title="ยังดูวิดิโอไม่จบ: ${escHtml(pend.join(' · '))}">⏳<span class="ll-plabel"> วิดิโอค้าง</span> ${pend.length}</span>`:''}
         <span class="ll-last">ล่าสุด ${ld.getDate()} ${THMO[ld.getMonth()]}</span>
         <button class="ll-report" title="ภาพสรุปเดือน ${THMO[curM]} ${curY+543}" onclick="event.stopPropagation();openMonthlyReport(${g.sid})">📤<span class="ll-rlabel"> ภาพสรุปเดือนนี้</span></button>
       </div>
@@ -1743,17 +1747,35 @@ function logMinutes(r){
   const m=t=>{const p=String(t).split(':');return (+p[0])*60+(+p[1]);};
   return Math.max(0,m(r.end_time)-m(r.start_time));
 }
-function reportStats(logs){
-  let minutes=0,sheets=0,vid=0,pd=0,pt=0,hasPages=false;
-  logs.forEach(r=>{
-    minutes+=logMinutes(r);
+// ชีทชื่อเดียวกันอาจถูกเรียนหลายคาบ → ยุบตามชื่อ แล้วเอาสถานะจาก "ครั้งล่าสุด"
+// (ถ้านับทุกครั้งที่ปรากฏ ชีทที่คาบแรกยังดูวิดิโอไม่จบแต่คาบหลังจบแล้ว จะถูกนับเป็น 2 คลิป
+//  และยังโผล่ในรายการค้างทั้งที่ดูจบไปแล้ว)
+function sheetsByName(logs){
+  const m=new Map();
+  logs.slice().sort((a,b)=>(a.iso_date+a.slot)<(b.iso_date+b.slot)?-1:1).forEach(r=>{
     sheetList(r).forEach(sh=>{
-      sheets++; if(sh.video_done)vid++;
-      if(sh.pages_done!=null){pd+=sh.pages_done;hasPages=true;}
-      if(sh.pages_total!=null){pt+=sh.pages_total;hasPages=true;}
+      if(!sh)return;
+      const name=String(sh.name||'').trim();
+      if(!name&&sh.pages_total==null&&sh.pages_done==null&&!sh.video_done)return;
+      m.set(name||'(ไม่ระบุชื่อชีท)',{video:!!sh.video_done,pd:sh.pages_done,pt:sh.pages_total});
     });
   });
-  return{sessions:logs.length,minutes,sheets,vid,pd,pt,hasPages};
+  return m;
+}
+function pendingVideos(logs){
+  return[...sheetsByName(logs)].filter(([,v])=>!v.video).map(([k])=>k);
+}
+function reportStats(logs){
+  let minutes=0; logs.forEach(r=>{minutes+=logMinutes(r);});
+  const m=sheetsByName(logs);
+  let vid=0,pd=0,pt=0,hasPages=false;
+  m.forEach(v=>{
+    if(v.video)vid++;
+    if(v.pd!=null){pd+=v.pd;hasPages=true;}
+    if(v.pt!=null){pt+=v.pt;hasPages=true;}
+  });
+  return{sessions:logs.length,minutes,sheets:m.size,vid,pd,pt,hasPages,
+         pending:[...m].filter(([,v])=>!v.video).map(([k])=>k)};
 }
 
 // ---- วาด ----
@@ -1795,9 +1817,12 @@ async function drawMonthlyReport(student,logs,idx){
     return{iso,items,h:20+items.reduce((n,it)=>n+it.h,0)+11+8};
   });
 
+  mc.font=rpFont(600,10.5);
+  const pendLines=st.pending.length?rpWrap(mc,'⏳ ยังดูวิดิโอไม่จบ: '+st.pending.join('  ·  '),CW-16):[];
+  const PENDBOX=pendLines.length?pendLines.length*14+8:0, PEND=PENDBOX?PENDBOX+10:0;
   const HEAD=78, CARD=62, STATS=74, BARS=(st.hasPages||st.sheets)?54:0, SECT=30, FOOT=40;
   const listH=entries.length?entries.reduce((n,e)=>n+e.h,0):46;
-  const H=Math.round(HEAD+CARD+STATS+BARS+SECT+listH+FOOT);
+  const H=Math.round(HEAD+CARD+STATS+BARS+PEND+SECT+listH+FOOT);
 
   // --- pass 2: วาดจริง ---
   const cv=document.createElement('canvas');
@@ -1855,7 +1880,13 @@ async function drawMonthlyReport(student,logs,idx){
     y+=27;
   };
   if(BARS){ bar('วิดิโอที่ดูจบ',st.vid,st.sheets,'คลิป',RP.ac2);
-            bar('โจทย์ที่ทำ',st.pd,st.pt,'หน้า',RP.ac); y+=0; }
+            bar('โจทย์ที่ทำ',st.pd,st.pt,'หน้า',RP.ac); }
+  if(PENDBOX){
+    c.fillStyle='#fef3c7'; c.strokeStyle='#fde68a'; c.lineWidth=1;
+    rpRect(c,P,y,CW,PENDBOX,8); c.fill(); c.stroke();
+    pendLines.forEach((ln,i)=>rpText(c,ln,P+8,y+15+i*14,{font:rpFont(600,10.5),color:'#92400e'}));
+    y+=PEND;
+  }
 
   // หัวข้อรายการ
   rpText(c,'📚 เรียนอะไรไปบ้าง',P,y+16,{font:rpFont(700,13),color:RP.t});
@@ -1887,8 +1918,8 @@ async function drawMonthlyReport(student,logs,idx){
         const tagX=P+CW-12;
         if(sh.pages)rpText(c,sh.pages,tagX,top+9,{font:rpFont(600,9.5),color:RP.t2,align:'right'});
         const vx=tagX-(sh.pages?sh.pw+8:0);
-        c.fillStyle=sh.video?'#d1fae5':RP.s2; rpRect(c,vx-sh.vw,top,sh.vw,13,6.5); c.fill();
-        rpText(c,sh.vtxt,vx-sh.vw/2,top+9,{font:rpFont(700,8.5),color:sh.video?'#065f46':RP.t3,align:'center'});
+        c.fillStyle=sh.video?'#d1fae5':'#fef3c7'; rpRect(c,vx-sh.vw,top,sh.vw,13,6.5); c.fill();
+        rpText(c,sh.vtxt,vx-sh.vw/2,top+9,{font:rpFont(700,8.5),color:sh.video?'#065f46':'#92400e',align:'center'});
         yy+=2;
       });
       if(it.hw){yy+=5;it.hw.forEach((ln,i)=>{rpText(c,(i===0?'📝 ':'    ')+ln,P+14,yy+9,{font:rpFont(400,10.5),color:RP.t2});yy+=14;});}
