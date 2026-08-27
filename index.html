@@ -246,6 +246,43 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .lv-pill-a{background:#d1fae5;color:#065f46;}.lv-pill-r{background:#fee2e2;color:#9b1c1c;}
 .lv-subhead{font-size:12px;font-weight:700;color:var(--t2);margin:14px 0 6px;}
 
+/* ===== LESSON LOG ===== */
+.chip.has-log{box-shadow:inset 0 -2px 0 var(--ac2);}
+.chip-log{background:none;border:none;padding:0 0 0 4px;margin:0;cursor:pointer;font-size:10px;line-height:1;opacity:.35;transition:opacity .15s;font-family:inherit;vertical-align:middle;}
+.chip:hover .chip-log,.chip-log:hover,.chip-log:focus{opacity:1;}
+.chip.has-log .chip-log{opacity:.95;}
+/* viewer — กล่อง "ล่าสุดที่เรียน" */
+.vc-latest{margin:10px 14px 0;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:9px 11px;}
+.vc-latest-t{font-size:11px;font-weight:700;color:#075985;margin-bottom:3px;}
+.vc-latest-d{font-size:11px;color:var(--t2);margin-bottom:4px;}
+.vc-latest-c{font-size:13px;color:var(--t);line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+.vc-latest-hw{font-size:12px;color:var(--t2);line-height:1.5;margin-top:5px;white-space:pre-wrap;word-break:break-word;}
+/* viewer — โน้ตเนื้อหาใต้คาบเรียนแต่ละวัน */
+.vc-day-main{flex:1;min-width:0;}
+.vc-note{font-size:12px;color:var(--t2);line-height:1.5;margin-top:5px;display:flex;gap:5px;align-items:flex-start;}
+.vc-note-slot{font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;flex-shrink:0;margin-top:2px;white-space:nowrap;}
+.vc-note-c{white-space:pre-wrap;word-break:break-word;min-width:0;}
+.vc-note-hw{display:block;color:var(--t3);margin-top:2px;}
+.vc-slot-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--ac2);margin-left:4px;vertical-align:middle;}
+/* แท็บ "บันทึกการเรียน" */
+.ll-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.ll-filters .sx{margin-bottom:0;}
+.ll-sel{max-width:240px;}
+.ll-q{flex:1;min-width:180px;max-width:340px;}
+.ll-count{font-size:11px;color:var(--t3);margin-bottom:10px;}
+.ll-group{margin-bottom:18px;}
+.ll-shead{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.ll-sname{font-size:14px;font-weight:700;}
+.ll-ssub{font-size:11px;color:var(--t3);font-weight:400;}
+.ll-item{background:var(--s);border:1px solid var(--bd);border-radius:11px;padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:box-shadow .15s;}
+.ll-item:hover{box-shadow:0 2px 10px rgba(0,0,0,.06);}
+.ll-head{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px;}
+.ll-date{font-size:12px;font-weight:600;color:var(--t2);}
+.ll-content{font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
+.ll-hw{font-size:12px;color:var(--t2);line-height:1.55;margin-top:4px;white-space:pre-wrap;word-break:break-word;}
+.ll-meta{font-size:11px;color:var(--t3);margin-top:5px;}
+.ll-latest{font-size:9px;font-weight:700;background:var(--ac2);color:#fff;padding:1px 7px;border-radius:20px;white-space:nowrap;}
+
 /* ===== VIEWER MOBILE PAGE ===== */
 .viewer-page{display:none;flex-direction:column;min-height:100vh;background:var(--bg);}
 .viewer-page.show{display:flex;}
@@ -375,6 +412,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
   /* ----- สรุปรายเดือน: 1 column ----- */
   .mg{grid-template-columns:1fr;gap:8px;}
   .mc{padding:11px;}
+  /* บันทึกการเรียน — ปุ่ม 📝 ต้องแตะง่ายบนมือถือ */
+  .chip-log{padding:2px 3px 2px 6px;font-size:13px;opacity:.65;}
+  .ll-sel,.ll-q{max-width:none;width:100%;}
+  .vc-latest{margin:10px 12px 0;}
 
   /* ----- heatmap: ลด font + padding ----- */
   .ht td{padding:6px 4px;font-size:13px;}
@@ -435,8 +476,8 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
     padding:4px;position:relative;transition:color .15s;
   }
   .bn-btn.active{color:var(--ac);}
-  .bn-icon{font-size:20px;line-height:1;}
-  .bn-label{font-size:10px;font-weight:600;}
+  .bn-icon{font-size:19px;line-height:1;}
+  .bn-label{font-size:10px;font-weight:600;white-space:nowrap;}
   .bn-dot{
     position:absolute;top:6px;right:calc(50% - 18px);
     width:7px;height:7px;background:#f59e0b;border-radius:50%;
@@ -468,6 +509,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 @media (max-width: 1024px) and (min-width: 769px){
   .sb{width:200px;}
   .sr{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width: 380px){
+  .bn-label{font-size:9px;}
+  .bn-icon{font-size:17px;}
 }
 </style>
 </head>
@@ -548,6 +593,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       <button class="nb active" onclick="showTab('schedule',this)">ตารางเรียน</button>
       <button class="nb" onclick="showTab('summary',this)">สรุปรายเดือน</button>
       <button class="nb" onclick="showTab('heatmap',this)">จำนวนต่อช่วง</button>
+      <button class="nb" onclick="showTab('lessons',this)">📘 บันทึกการเรียน</button>
       <button class="nb" id="adminTabBtn" style="display:none" onclick="showTab('admin',this)">⚙️ จัดการผู้ใช้<span id="pendingDot" class="pending-dot" style="display:none;"></span></button>
     </nav>
     <div class="topbar-right">
@@ -608,6 +654,14 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
         <div id="hmWrap"></div>
         <div id="hmStats" style="margin-top:16px;"></div>
       </div>
+      <div class="tc" id="tab-lessons">
+        <div class="sh"><h2>📘 บันทึกการเรียน — รายคน</h2></div>
+        <div class="ll-filters">
+          <select class="sx ll-sel" id="lessonStudentFilter" onchange="renderLessons()"></select>
+          <input class="sx ll-q" id="lessonSearch" type="text" placeholder="ค้นหาเนื้อหา / ชื่อนักเรียน..." oninput="renderLessonsDebounced()">
+        </div>
+        <div id="lessonsList"></div>
+      </div>
       <div class="tc" id="tab-admin">
         <div class="sh"><h2>⚙️ จัดการผู้ใช้ที่มีสิทธิ์เข้าถึง</h2></div>
         <!-- Mobile-only: Import CSV button (เพราะ topbar ซ่อน) -->
@@ -659,6 +713,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
     </button>
     <button class="bn-btn" data-tab="heatmap" onclick="showTab('heatmap',this,true)">
       <div class="bn-icon">🔥</div><div class="bn-label">ช่วงเวลา</div>
+    </button>
+    <button class="bn-btn" data-tab="lessons" onclick="showTab('lessons',this,true)">
+      <div class="bn-icon">📘</div><div class="bn-label">บันทึก</div>
     </button>
     <button class="bn-btn" data-tab="admin" onclick="showTab('admin',this,true)">
       <div class="bn-icon">⚙️</div><div class="bn-label">จัดการ</div>
@@ -730,6 +787,27 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 </div>
 </div>
 
+<!-- Lesson Log Modal (admin) -->
+<div class="ov" id="lessonOv" onclick="if(event.target===this)closeModal('lessonOv')">
+<div class="mo" style="width:470px;">
+  <div class="moti" id="lessonTitle">📘 บันทึกเนื้อหาที่เรียน</div>
+  <div id="lessonInfo" style="font-size:14px;font-weight:600;margin-bottom:10px;"></div>
+  <div class="fg">
+    <label class="fl">เนื้อหาที่เรียนคาบนี้</label>
+    <textarea class="fi" id="lessonContent" rows="5" placeholder="เช่น ตรีโกณมิติ บทที่ 3 — กฎของไซน์/โคไซน์ · ทำโจทย์ข้อ 1–12"></textarea>
+  </div>
+  <div class="fg">
+    <label class="fl">การบ้าน (ถ้ามี)</label>
+    <textarea class="fi" id="lessonHw" rows="2" placeholder="เช่น แบบฝึกหัด 3.2 ข้อ 1–10 ส่งคาบหน้า"></textarea>
+  </div>
+  <div id="lessonMeta" style="font-size:11px;color:var(--t3);margin-bottom:4px;"></div>
+  <div class="ma">
+    <button class="btn bd3" id="lessonDeleteBtn" style="display:none" onclick="deleteLessonLog()">ลบบันทึก</button>
+    <button class="btn" onclick="closeModal('lessonOv')">ยกเลิก</button>
+    <button class="btn bp" onclick="saveLessonLog()">บันทึก</button>
+  </div>
+</div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -747,6 +825,8 @@ const SLOT_SET=new Set(SLOTS);
 let currentUser=null,userRole=null,userStudentIds=[],userName='';
 let students=[],schedules=[];
 let leaveMap={},pendingLeave=null;
+let logMap={},latestLogMap={},pendingLog=null;
+let lessonFeed=null,lessonFeedByStudent={};   // แคชของแท็บ "บันทึกการเรียน"
 let pendingUserCount=0,pendingLeaveCount=0;
 let curY=2026,curM=2;
 let vY=2026,vM=2; // viewer month
@@ -767,7 +847,7 @@ function setupMobileAdminUI(){
   // FAB: โผล่บนมือถือเฉพาะแท็บที่ไม่ใช่ admin
   const fab=document.getElementById('fabBtn');
   const activeTab=document.querySelector('.tc.active')?.id;
-  if(fab)fab.style.display=(m&&activeTab!=='tab-admin')?'flex':'none';
+  if(fab)fab.style.display=(m&&activeTab!=='tab-admin'&&activeTab!=='tab-lessons')?'flex':'none';
 }
 window.addEventListener('resize',()=>{if(userRole==='admin'){setupMobileAdminUI();renderAll();}});
 
@@ -886,6 +966,7 @@ async function loadData(){
     students=sData||[];
     await loadSchedulesForMonth(curY,curM);
     await loadLeavesForMonth(curY,curM,null);
+    await loadLessonLogsForMonth(curY,curM,null);
     renderAll();
     refreshAdminLeaveIndicator();
   }catch(err){
@@ -926,6 +1007,59 @@ function daysUntil(iso){const t=isoToDate(iso);const n=new Date();const today=ne
 function fmtIsoTh(iso){const dt=isoToDate(iso);return`${dt.getDate()} ${THMO[dt.getMonth()]} ${dt.getFullYear()+543} (${DTH[dt.getDay()]})`;}
 
 // ============================================================
+// LESSON LOG — data + helpers
+// เก็บ "รายคาบ": 1 แถว = (student_id, iso_date, slot)
+// admin เขียนได้อย่างเดียว, viewer อ่านได้ (บังคับจริงด้วย RLS — ดู supabase-lesson-log-migration.sql)
+// ============================================================
+function todayIso(){const n=new Date();return isoDate(n.getFullYear(),n.getMonth(),n.getDate());}
+
+// logMap = เฉพาะเดือนที่กำลังแสดง (ใช้กับตารางเรียน + โน้ตใต้คาบของ viewer)
+async function loadLessonLogsForMonth(y,m,ids){
+  const{start,end}=monthRange(y,m);
+  let q=sb.from('lesson_logs').select('*').gte('iso_date',start).lte('iso_date',end);
+  if(ids&&ids.length)q=q.in('student_id',ids);
+  const{data,error}=await q;
+  if(error)console.warn('loadLessonLogsForMonth:',error.message||error);
+  logMap={};
+  (data||[]).forEach(r=>{
+    if(!logMap[r.student_id])logMap[r.student_id]={};
+    if(!logMap[r.student_id][r.iso_date])logMap[r.student_id][r.iso_date]={};
+    logMap[r.student_id][r.iso_date][r.slot]=r;
+  });
+}
+function lessonLog(sid,iso,slot){return((logMap[sid]||{})[iso]||{})[slot]||null;}
+
+// "ล่าสุดที่เรียน" ต้องข้ามเดือนได้ → ยิงทีละคน limit 1 (viewer 1 บัญชีผูกลูกไม่กี่คน)
+// slot เรียงตามตัวอักษรตรงกับลำดับเวลาพอดี (M10 < M13 < M15 < M17)
+async function loadLatestLessonLogs(ids){
+  latestLogMap={};
+  if(!ids||!ids.length)return;
+  const t=todayIso();
+  const res=await Promise.all(ids.map(id=>
+    sb.from('lesson_logs').select('*').eq('student_id',id).lte('iso_date',t)
+      .order('iso_date',{ascending:false}).order('slot',{ascending:false}).limit(1)
+  ));
+  res.forEach((r,i)=>{const row=(r.data||[])[0];if(row)latestLogMap[ids[i]]=row;});
+}
+
+// feed ของแท็บ "บันทึกการเรียน" — ไม่ผูกกับเดือนที่เลือก
+async function loadLessonFeed(limit=300){
+  const{data,error}=await sb.from('lesson_logs').select('*')
+    .order('iso_date',{ascending:false}).order('slot',{ascending:false}).limit(limit);
+  if(error){showToast('โหลดบันทึกไม่สำเร็จ: '+(error.message||error));lessonFeed=[];return;}
+  lessonFeed=data||[];
+}
+async function loadLessonFeedForStudent(sid,limit=500){
+  if(lessonFeedByStudent[sid])return lessonFeedByStudent[sid];
+  const{data,error}=await sb.from('lesson_logs').select('*').eq('student_id',sid)
+    .order('iso_date',{ascending:false}).order('slot',{ascending:false}).limit(limit);
+  if(error){showToast('โหลดบันทึกไม่สำเร็จ: '+(error.message||error));return[];}
+  lessonFeedByStudent[sid]=data||[];
+  return lessonFeedByStudent[sid];
+}
+function invalidateLessonCaches(){lessonFeed=null;lessonFeedByStudent={};}
+
+// ============================================================
 // VIEWER
 // ============================================================
 async function loadViewerData(){
@@ -942,6 +1076,8 @@ async function loadViewerData(){
     (schData||[]).forEach(r=>{if(!schMap[r.student_id])schMap[r.student_id]={};schMap[r.student_id][r.iso_date]=r.slots;});
     myStudents.forEach(s=>{s.schedule=schMap[s.id]||{};});
     await loadLeavesForMonth(vY,vM,userStudentIds);
+    await loadLessonLogsForMonth(vY,vM,userStudentIds);
+    await loadLatestLessonLogs(userStudentIds);
     renderViewerPage(myStudents);
   }catch(err){
     console.error('loadViewerData failed:',err);
@@ -963,22 +1099,38 @@ function renderViewerPage(myStudents){
     return;
   }
 
-  content.innerHTML=`<div class="vc-hint">💡 แตะคาบเรียนเพื่อ <b>ขอลา</b> (≥2 วัน อนุมัติเอง · &lt;2 วัน รอครู)<br>🔁 แตะคาบที่ <b>ลาแล้ว (ขีดฆ่า)</b> ซ้ำอีกครั้ง เพื่อ <b>ยกเลิกการลา</b> — ยกเลิกเองได้ถ้าเหลือ ≥2 วัน</div>`+myStudents.map((s,i)=>{
+  content.innerHTML=`<div class="vc-hint">💡 แตะคาบเรียนเพื่อ <b>ขอลา</b> (≥2 วัน อนุมัติเอง · &lt;2 วัน รอครู)<br>🔁 แตะคาบที่ <b>ลาแล้ว (ขีดฆ่า)</b> ซ้ำอีกครั้ง เพื่อ <b>ยกเลิกการลา</b> — ยกเลิกเองได้ถ้าเหลือ ≥2 วัน<br>📘 คาบที่มีจุดเขียว คือคาบที่ครู <b>บันทึกเนื้อหาที่เรียน</b> ไว้แล้ว — อ่านได้ที่บรรทัดใต้คาบนั้น</div>`+myStudents.map((s,i)=>{
     const entries=classDays.filter(d=>(s.schedule[d.iso]||[]).length>0);
     const tot=entries.reduce((n,d)=>n+(s.schedule[d.iso]||[]).length,0);
     const daysHtml=entries.length ? entries.map(d=>{
       const slots=s.schedule[d.iso]||[];
       return`<div class="vc-day">
         <div class="vc-day-date">${d.dayTh} ${d.date}</div>
-        <div class="vc-day-slots">${slots.map(sl=>{
-          const lv=leaveStatus(s.id,d.iso,sl);
-          let cls='vc-slot vc-slot-'+sl,badge='';
-          if(lv&&lv.status==='approved'){cls+=' lv-appr';badge='<span class="vc-slot-badge lv-tag-a">ลา</span>';}
-          else if(lv&&lv.status==='pending'){cls+=' lv-pend';badge='<span class="vc-slot-badge lv-tag-p">รอลา</span>';}
-          return`<span class="${cls}" onclick="openLeave(${s.id},'${d.iso}','${sl}')">${sl} <span class="vc-slot-time">${SLB[sl]}</span>${badge}</span>`;
-        }).join('')}</div>
+        <div class="vc-day-main">
+          <div class="vc-day-slots">${slots.map(sl=>{
+            const lv=leaveStatus(s.id,d.iso,sl);
+            let cls='vc-slot vc-slot-'+sl,badge='';
+            if(lv&&lv.status==='approved'){cls+=' lv-appr';badge='<span class="vc-slot-badge lv-tag-a">ลา</span>';}
+            else if(lv&&lv.status==='pending'){cls+=' lv-pend';badge='<span class="vc-slot-badge lv-tag-p">รอลา</span>';}
+            const dot=lessonLog(s.id,d.iso,sl)?'<span class="vc-slot-dot" title="มีบันทึกเนื้อหา"></span>':'';
+            return`<span class="${cls}" onclick="openLeave(${s.id},'${d.iso}','${sl}')">${sl} <span class="vc-slot-time">${SLB[sl]}</span>${badge}${dot}</span>`;
+          }).join('')}</div>
+          ${slots.map(sl=>{
+            const lg=lessonLog(s.id,d.iso,sl);
+            if(!lg)return '';
+            return`<div class="vc-note"><span class="vc-note-slot vc-slot-${sl}">${sl}</span><span class="vc-note-c">${escHtml(lg.content)}${lg.homework?`<span class="vc-note-hw">📝 การบ้าน: ${escHtml(lg.homework)}</span>`:''}</span></div>`;
+          }).join('')}
+        </div>
       </div>`;
     }).join('') : `<div class="vc-empty">ยังไม่มีตารางเรียนเดือนนี้</div>`;
+
+    const latest=latestLogMap[s.id];
+    const latestHtml=latest?`<div class="vc-latest">
+      <div class="vc-latest-t">📘 ล่าสุดที่เรียน</div>
+      <div class="vc-latest-d">${fmtIsoTh(latest.iso_date)} · ${SLB[latest.slot]||''} (${latest.slot})</div>
+      <div class="vc-latest-c">${escHtml(latest.content)}</div>
+      ${latest.homework?`<div class="vc-latest-hw">📝 การบ้าน: ${escHtml(latest.homework)}</div>`:''}
+    </div>`:'';
 
     return`<div class="vc">
       <div class="vc-header">
@@ -992,6 +1144,7 @@ function renderViewerPage(myStudents){
           <div class="vc-count-label">ครั้ง/เดือน</div>
         </div>
       </div>
+      ${latestHtml}
       <div class="vc-body">
         <div class="vc-month-label">${THMO[vM]} ${vY+543}</div>
         <div class="vc-days">${daysHtml}</div>
@@ -1169,6 +1322,7 @@ function renderAll(){
   if(t?.id==='tab-schedule'){renderSchedule();renderMobileSched();}
   else if(t?.id==='tab-summary')renderSummary();
   else if(t?.id==='tab-heatmap')renderHeatmap();
+  else if(t?.id==='tab-lessons')renderLessons();
   else if(t?.id==='tab-admin')renderAdmin();
 }
 
@@ -1231,7 +1385,10 @@ function renderMobileSched(){
             let cls='chip chip-'+sl,tag='';
             if(lv&&lv.status==='approved'){cls+=' lv-appr';tag='<span class="lv-tag lv-tag-a">ลา</span>';lvc++;}
             else{att++;if(lv&&lv.status==='pending'){cls+=' lv-pend';tag='<span class="lv-tag lv-tag-p">รอลา</span>';}}
-            return`<span class="${cls}" onclick="openEdit(${s.id})">${s.nick}${tag}</span>`;
+            const lg=lessonLog(s.id,d.iso,sl);
+            if(lg)cls+=' has-log';
+            const logBtn=`<button class="chip-log" title="${lg?escHtml(lg.content):'บันทึกเนื้อหาที่เรียน'}" onclick="event.stopPropagation();openLessonLog(${s.id},'${d.iso}','${sl}')">📝</button>`;
+            return`<span class="${cls}" onclick="openEdit(${s.id})">${escHtml(s.nick)}${tag}${logBtn}</span>`;
           }).join('')
         : '<span class="msc-empty">— ไม่มี —</span>';
       return`<div class="msc-slot">
@@ -1272,7 +1429,10 @@ function renderSchedule(){
           let cls='chip chip-'+sl,tag='';
           if(lv&&lv.status==='approved'){cls+=' lv-appr';tag='<span class="lv-tag lv-tag-a">ลา</span>';lvc++;}
           else{att++;if(lv&&lv.status==='pending'){cls+=' lv-pend';tag='<span class="lv-tag lv-tag-p">รอลา</span>';}}
-          h+=`<span class="${cls}" onclick="openEdit(${s.id})" title="${s.name}">${s.nick}${tag}</span>`;
+          const lg=lessonLog(s.id,d.iso,sl);
+          if(lg)cls+=' has-log';
+          const logBtn=`<button class="chip-log" title="${lg?escHtml(lg.content):'บันทึกเนื้อหาที่เรียน'}" onclick="event.stopPropagation();openLessonLog(${s.id},'${d.iso}','${sl}')">📝</button>`;
+          h+=`<span class="${cls}" onclick="openEdit(${s.id})" title="${escHtml(s.name)}">${escHtml(s.nick)}${tag}${logBtn}</span>`;
         });
         h+=`<div class="cc">${att} คน${lvc?` · ลา ${lvc}`:''}</div>`;
       }
@@ -1335,6 +1495,80 @@ function renderHeatmap(){
     sh+=`<div class="sk blue" style="padding:10px 12px;"><div class="sl2">${d.dayTh} ${d.date}</div><div class="sv" style="font-size:19px;">${tot}</div><div class="ss">ครั้ง · max ${mx2}/slot</div></div>`;
   });
   document.getElementById('hmStats').innerHTML=sh+'</div>';
+}
+
+// ============================================================
+// LESSON LOG — แท็บ "บันทึกการเรียน" (จัดกลุ่มตามนักเรียน, ใหม่→เก่า)
+// ============================================================
+let _lessonSearchTimer=null;
+function renderLessonsDebounced(){
+  clearTimeout(_lessonSearchTimer);
+  _lessonSearchTimer=setTimeout(renderLessons,180);
+}
+
+async function renderLessons(){
+  if(userRole!=='admin')return;
+  const sel=document.getElementById('lessonStudentFilter');
+  if(!sel)return;
+  const keep=sel.value;
+  sel.innerHTML='<option value="">— นักเรียนทุกคน —</option>'
+    +students.map(s=>`<option value="${s.id}">${escHtml(s.nick)} (${escHtml(s.name)})</option>`).join('');
+  sel.value=keep;
+
+  const sid=keep?parseInt(keep):0;
+  let rows,capped=false;
+  if(sid)rows=await loadLessonFeedForStudent(sid);
+  else{
+    if(!lessonFeed)await loadLessonFeed();
+    rows=lessonFeed||[];
+    capped=rows.length>=300;
+  }
+
+  const q=(document.getElementById('lessonSearch').value||'').trim().toLowerCase();
+  const stOf=id=>students.find(x=>x.id===id);
+  if(q)rows=rows.filter(r=>{
+    const s=stOf(r.student_id);
+    return(r.content||'').toLowerCase().includes(q)
+      ||(r.homework||'').toLowerCase().includes(q)
+      ||(s&&((s.nick||'').toLowerCase().includes(q)||(s.name||'').toLowerCase().includes(q)));
+  });
+
+  const wrap=document.getElementById('lessonsList');
+  if(!rows.length){
+    wrap.innerHTML=`<div class="no-data"><strong>${(q||sid)?'ไม่พบบันทึกที่ค้นหา':'ยังไม่มีบันทึกการเรียน'}</strong>ไปที่แท็บ "ตารางเรียน" แล้วแตะไอคอน 📝 บนชื่อนักเรียนในคาบที่ต้องการ เพื่อบันทึกเนื้อหาที่สอน</div>`;
+    return;
+  }
+
+  // จัดกลุ่มตามนักเรียน — เรียงคนที่มีบันทึกใหม่สุดขึ้นก่อน
+  const byStu={};
+  rows.forEach(r=>{(byStu[r.student_id]=byStu[r.student_id]||[]).push(r);});
+  const key=r=>r.iso_date+'|'+r.slot;
+  const groups=Object.keys(byStu).map(k=>{
+    const list=byStu[k].slice().sort((a,b)=>key(a)<key(b)?1:-1);
+    return{sid:parseInt(k),list,newest:key(list[0])};
+  }).sort((a,b)=>a.newest<b.newest?1:-1);
+
+  wrap.innerHTML=`<div class="ll-count">${rows.length} บันทึก · ${groups.length} คน${capped?' · แสดง 300 รายการล่าสุด (เลือกชื่อนักเรียนเพื่อดูทั้งหมดของคนนั้น)':''}</div>`
+    +groups.map(g=>{
+    const idx=students.findIndex(x=>x.id===g.sid);
+    const s=idx>=0?students[idx]:null;
+    return`<div class="ll-group">
+      <div class="ll-shead">
+        <div class="av ${avC(idx<0?0:idx)}">${s?ini(s):'?'}</div>
+        <div class="ll-sname">${escHtml(s?s.nick:'#'+g.sid)} <span class="ll-ssub">${s?escHtml(s.name)+' · '+escHtml(s.grade):''}</span></div>
+      </div>
+      ${g.list.map((r,i)=>`<div class="ll-item" onclick="openLessonLog(${r.student_id},'${r.iso_date}','${r.slot}')">
+        <div class="ll-head">
+          ${i===0?'<span class="ll-latest">ล่าสุด</span>':''}
+          <span class="ll-date">${fmtIsoTh(r.iso_date)}</span>
+          <span class="chip chip-${r.slot}" style="cursor:inherit;">${r.slot} · ${SLB[r.slot]||''}</span>
+        </div>
+        <div class="ll-content">${escHtml(r.content)}</div>
+        ${r.homework?`<div class="ll-hw">📝 การบ้าน: ${escHtml(r.homework)}</div>`:''}
+        <div class="ll-meta">${escHtml(r.updated_by||r.created_by||'')}${r.updated_at?' · '+new Date(r.updated_at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
 }
 
 // ============================================================
@@ -1528,6 +1762,74 @@ async function cancelLeave(){
 async function reloadAfterLeave(){
   if(userRole==='viewer'){await loadViewerData();}
   else{await loadLeavesForMonth(curY,curM,null);renderAll();refreshAdminLeaveIndicator();}
+}
+
+// ============================================================
+// LESSON LOG — เขียน/แก้/ลบ (admin เท่านั้น)
+// ============================================================
+function openLessonLog(sid,iso,slot){
+  try{requireAdmin();}catch(e){return;}
+  const s=students.find(x=>x.id===sid);
+  const existing=lessonLog(sid,iso,slot)
+    ||(lessonFeed||[]).find(r=>r.student_id===sid&&r.iso_date===iso&&r.slot===slot)
+    ||(lessonFeedByStudent[sid]||[]).find(r=>r.iso_date===iso&&r.slot===slot)
+    ||null;
+  pendingLog={sid,iso,slot,existing};
+  document.getElementById('lessonTitle').textContent=existing?'📘 แก้ไขบันทึกเนื้อหา':'📘 บันทึกเนื้อหาที่เรียน';
+  // textContent → ปลอดภัยจาก XSS โดยไม่ต้อง escape
+  document.getElementById('lessonInfo').textContent=
+    `${fmtIsoTh(iso)} · ${SLB[slot]||''} (${slot})${s?` — ${s.nick}`:''}`;
+  const ta=document.getElementById('lessonContent');
+  ta.value=existing?.content||'';
+  document.getElementById('lessonHw').value=existing?.homework||'';
+  document.getElementById('lessonDeleteBtn').style.display=existing?'':'none';
+  document.getElementById('lessonMeta').textContent=existing
+    ? `บันทึกล่าสุดโดย ${existing.updated_by||existing.created_by||'—'}`
+      +(existing.updated_at?` · ${new Date(existing.updated_at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`:'')
+    : '';
+  document.getElementById('lessonOv').classList.add('open');
+  setTimeout(()=>{try{ta.focus();}catch(e){}},60);
+}
+
+async function saveLessonLog(){
+  try{requireAdmin();}catch(e){return;}
+  if(!pendingLog)return;
+  const{sid,iso,slot,existing}=pendingLog;
+  const content=document.getElementById('lessonContent').value.trim();
+  const homework=document.getElementById('lessonHw').value.trim();
+  if(!content){
+    if(existing)return deleteLessonLog(true);   // ลบเนื้อหาจนว่าง = ลบบันทึกคาบนี้
+    showToast('กรุณากรอกเนื้อหาที่เรียน');return;
+  }
+  showLoading(true);
+  const row={student_id:sid,iso_date:iso,slot,content,homework:homework||null,
+             updated_by:currentUser.email,updated_at:new Date().toISOString()};
+  if(!existing)row.created_by=currentUser.email;   // upsert แตะเฉพาะคอลัมน์ที่ส่งไป
+  const{error}=await sb.from('lesson_logs').upsert(row,{onConflict:'student_id,iso_date,slot'});
+  closeModal('lessonOv');
+  if(error){showLoading(false);showToast('บันทึกไม่ได้: '+error.message);return;}
+  await reloadAfterLog();
+  showLoading(false);
+  showToast('บันทึกเนื้อหาแล้ว ✓');
+}
+
+async function deleteLessonLog(skipConfirm){
+  try{requireAdmin();}catch(e){return;}
+  const ex=pendingLog?.existing;if(!ex)return;
+  if(!skipConfirm&&!confirm('ลบบันทึกเนื้อหาของคาบนี้?'))return;
+  showLoading(true);
+  const{error}=await sb.from('lesson_logs').delete().eq('id',ex.id);
+  closeModal('lessonOv');
+  if(error){showLoading(false);showToast('ลบไม่ได้: '+error.message);return;}
+  await reloadAfterLog();
+  showLoading(false);
+  showToast('ลบบันทึกแล้ว');
+}
+
+async function reloadAfterLog(){
+  invalidateLessonCaches();
+  await loadLessonLogsForMonth(curY,curM,null);
+  renderAll();
 }
 
 // ---- admin approval ----
@@ -1848,7 +2150,7 @@ function showTab(tab,btn,fromBottom){
   }
   // FAB: ซ่อนในแท็บ admin (เพราะ admin tab ไม่เกี่ยวกับเพิ่มนักเรียน)
   const fab=document.getElementById('fabBtn');
-  if(fab)fab.style.display=(isMobile()&&tab!=='admin')?'flex':'none';
+  if(fab)fab.style.display=(isMobile()&&tab!=='admin'&&tab!=='lessons')?'flex':'none';
   renderAll();
 }
 async function changeMonth(d){
@@ -1857,6 +2159,7 @@ async function changeMonth(d){
   try{
     await loadSchedulesForMonth(curY,curM);
     await loadLeavesForMonth(curY,curM,null);
+    await loadLessonLogsForMonth(curY,curM,null);
     renderAll();
   }catch(err){
     console.error('changeMonth failed:',err);

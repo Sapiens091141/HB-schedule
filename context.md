@@ -1,7 +1,7 @@
 # HB Schedule — Project Context
 
 ระบบจัดการ **ตารางเรียน HB** (สถาบันติว) — เว็บแอปไฟล์เดียว ภาษาไทย
-อัปเดตล่าสุด: 2026-07-04
+อัปเดตล่าสุด: 2026-08-27
 
 - **เว็บจริง:** https://sapiens091141.github.io/HB-schedule/
 - **Repo:** `Sapiens091141/HB-schedule` (GitHub Pages, branch `main`, root)
@@ -41,8 +41,11 @@
 | `schedules` | `student_id, iso_date (date), slots (text[])` — unique(student_id, iso_date) |
 | `allowed_users` | `email, role, student_ids (int[]), display_name` |
 | `leave_requests` | `id, student_id, iso_date, slot, reason, status (pending/approved/rejected), days_notice, requested_by, decided_by, decided_at` — unique(student_id, iso_date, slot) |
+| `lesson_logs` | `id, student_id, iso_date, slot, content, homework, created_by, created_at, updated_by, updated_at` — unique(student_id, iso_date, slot) |
 
 RLS เปิดบน `leave_requests`: admin เห็น/แก้ได้ทั้งหมด, viewer เข้าถึงเฉพาะของนักเรียนใน `student_ids` ตัวเอง (`= any(u.student_ids)`)
+
+RLS เปิดบน `lesson_logs` เช่นกัน แต่**เข้มกว่า**: อ่านได้เหมือน `leave_requests` (admin ทั้งหมด / viewer เฉพาะ `student_ids`) ส่วน insert/update/delete **จำกัดที่ `role = 'admin'` เท่านั้น** — viewer เป็นผู้อ่านอย่างเดียว
 
 ---
 
@@ -66,6 +69,13 @@ RLS เปิดบน `leave_requests`: admin เห็น/แก้ได้�
 ### 4.4 ลงทะเบียนต้องตั้งชื่อผู้ใช้
 - ฟอร์มสมัครบังคับกรอก **ชื่อผู้ใช้/ชื่อจริง** (`display_name`) → admin เห็นตอนอนุมัติ · ชื่อ escape กัน XSS
 
+### 4.7 บันทึกเนื้อหาที่เรียน (lesson log)
+- เก็บ **รายคาบ** — 1 แถว = (นักเรียน, วันที่, ช่วงเวลา) → มีประวัติครบ และคำนวณ "ล่าสุดที่เรียน" ของแต่ละคนได้
+- **ครูบันทึก 2 ทาง:** (ก) แตะไอคอน 📝 บนชิปนักเรียนในตารางเรียน (แตะที่ตัวชิปยังเปิดหน้าแก้นักเรียนเหมือนเดิม) (ข) แท็บ **"📘 บันทึกการเรียน"** — จัดกลุ่มตามนักเรียน ป้าย "ล่าสุด" ที่คาบใหม่สุด + ค้นหาด้วยชื่อ/เนื้อหา/การบ้าน
+- ชิปที่มีบันทึกแล้วขีดเส้นใต้สีเขียว · ลบเนื้อหาจนว่างแล้วกดบันทึก = ลบบันทึกคาบนั้น
+- **viewer เห็นอย่างเดียว:** กล่อง "📘 ล่าสุดที่เรียน" บนหัวการ์ดนักเรียน (ข้ามเดือนได้) + บรรทัดเนื้อหาใต้คาบที่มีบันทึก + จุดเขียวบนคาบนั้น
+- เนื้อหา/การบ้าน render ผ่าน `escHtml()` ทุกจุด (กัน XSS) และคงบรรทัดใหม่ด้วย CSS `white-space:pre-wrap`
+
 ### 4.5 ลืมรหัสผ่าน
 - ลิงก์ "ลืมรหัสผ่าน?" → `resetPasswordForEmail` ส่งอีเมล → คลิกลิงก์กลับมา (`PASSWORD_RECOVERY`) → ตั้งรหัสใหม่ (`updateUser`)
 
@@ -82,6 +92,7 @@ RLS เปิดบน `leave_requests`: admin เห็น/แก้ได้�
 | `supabase-leave-migration.sql` | สร้าง `leave_requests` + RLS (ใช้ `student_ids`) | ✅ รันแล้ว |
 | `supabase-username-migration.sql` | เพิ่มคอลัมน์ `display_name` | ✅ รันแล้ว |
 | `supabase-line-notify.sql` | trigger + pg_net แจ้ง LINE (**มี token — gitignore ไว้**) | ✅ รันแล้ว |
+| `supabase-lesson-log-migration.sql` | สร้าง `lesson_logs` + RLS (admin เขียน / viewer อ่าน) | ⬜ **ยังไม่ได้รัน** |
 
 > ⚠️ `supabase-line-notify.sql` มี LINE Channel Access Token → ถูก `.gitignore` ไว้ **ห้าม commit ขึ้น repo**
 
@@ -116,3 +127,9 @@ RLS เปิดบน `leave_requests`: admin เห็น/แก้ได้�
 | `44c0f41` | กติกา 2 วัน สำหรับยกเลิกการลาเอง |
 | `86b10bc` | เพิ่ม hint ให้หาปุ่มยกเลิกการลาเจอ |
 | `8fb3632` | เพิ่ม `.nojekyll` กัน Pages build ล้ม |
+
+## 9. Changelog (2026-08-27)
+
+| งาน | รายละเอียด |
+|---|---|
+| ฟีเจอร์บันทึกเนื้อหาที่เรียน | ตาราง `lesson_logs` (รายคาบ) + modal 📝 บนชิปตารางเรียน + แท็บที่ 5 "บันทึกการเรียน" + กล่อง "ล่าสุดที่เรียน" ในหน้า viewer · ดู §4.7 |
