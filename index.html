@@ -318,7 +318,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .sh-name{font-weight:600;}
 .sh-tag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;white-space:nowrap;}
 .sh-vid-y{background:#d1fae5;color:#065f46;}
-.sh-vid-n{background:#fef3c7;color:#92400e;}
 .sh-pg{font-size:11px;font-weight:600;color:var(--t2);white-space:nowrap;}
 .lg-time{font-size:11px;font-weight:700;color:var(--ac);background:var(--acl);padding:1px 7px;border-radius:20px;white-space:nowrap;}
 .lg-block{margin-top:5px;font-size:12px;color:var(--t2);line-height:1.55;white-space:pre-wrap;word-break:break-word;}
@@ -1788,9 +1787,16 @@ function logMinutes(r){
   const m=t=>{const p=String(t).split(':');return (+p[0])*60+(+p[1]);};
   return Math.max(0,m(r.end_time)-m(r.start_time));
 }
-// ชีทชื่อเดียวกันอาจถูกเรียนหลายคาบ → ยุบตามชื่อ แล้วเอาสถานะจาก "ครั้งล่าสุด"
-// (ถ้านับทุกครั้งที่ปรากฏ ชีทที่คาบแรกยังดูวิดิโอไม่จบแต่คาบหลังจบแล้ว จะถูกนับเป็น 2 คลิป
-//  และยังโผล่ในรายการค้างทั้งที่ดูจบไปแล้ว)
+// ชีทชื่อเดียวกันถูกเรียนได้หลายคาบ → ยุบตามชื่อ แต่ "วิดิโอ" กับ "โจทย์" ใช้กฎคนละแบบ
+//
+//   วิดิโอ = เคยติ๊กไหม (OR ทุกคาบ)  ไม่ใช่เอาสถานะคาบล่าสุด
+//     เพราะครูดูวิดิโอจบในคาบแรกที่เจอชีทแล้วติ๊กไว้ คาบถัดๆ ไปทำแต่โจทย์จึงไม่ติ๊ก
+//     ถ้าเอาคาบล่าสุด การติ๊กที่เคยทำจะถูกลบล้างทุกครั้งที่เรียนชีทเดิมซ้ำ เช่น
+//       08-05 EC01 [ติ๊ก] -/-  ·  08-07 EC01 [ไม่ติ๊ก] 4/8  ·  08-14 EC01 [ไม่ติ๊ก] 8/8
+//     ของจริงคือดูจบแล้ว แต่จะถูกนับว่ายังไม่จบ  ("ดูวิดิโอจบแล้ว" ย้อนกลับไม่ได้)
+//
+//   โจทย์ = ค่าล่าสุดที่ไม่ว่าง  เพราะเป็นความคืบหน้าสะสมของชีทนั้น (4/8 → 8/8)
+//     ถ้าบวกทุกคาบจะได้ 12/16 ทั้งที่จริงคือ 8/8
 function sheetsByName(logs){
   const m=new Map();
   logs.slice().sort((a,b)=>(a.iso_date+a.slot)<(b.iso_date+b.slot)?-1:1).forEach(r=>{
@@ -1798,7 +1804,13 @@ function sheetsByName(logs){
       if(!sh)return;
       const name=String(sh.name||'').trim();
       if(!name&&sh.pages_total==null&&sh.pages_done==null&&!sh.video_done)return;
-      m.set(name||'(ไม่ระบุชื่อชีท)',{video:!!sh.video_done,pd:sh.pages_done,pt:sh.pages_total});
+      const key=name||'(ไม่ระบุชื่อชีท)';
+      const prev=m.get(key)||{video:false,pd:null,pt:null};
+      m.set(key,{
+        video:prev.video||!!sh.video_done,
+        pd:sh.pages_done!=null?sh.pages_done:prev.pd,
+        pt:sh.pages_total!=null?sh.pages_total:prev.pt
+      });
     });
   });
   return m;
@@ -1836,8 +1848,8 @@ async function drawMonthlyReport(student,logs,idx){
     const items=days[iso].map(r=>{
       const sheets=sheetList(r).filter(sh=>sh&&(sh.name||sh.pages_total!=null)).map(sh=>{
         // กันระยะให้ป้าย "วิดิโอ" + "x/y หน้า" ตามความกว้างจริง ไม่ใช่ค่าคงที่ (ชื่อชีทยาวจะได้ไม่ชนป้าย)
-        const vtxt=sh.video_done?'วิดิโอจบ':'วิดิโอยังไม่จบ';
-        mc.font=rpFont(700,8.5); const vw=mc.measureText(vtxt).width+10;
+        const vtxt=sh.video_done?'\u2714 ดูวิดิโอจบ':'';
+        mc.font=rpFont(700,8.5); const vw=vtxt?mc.measureText(vtxt).width+10:0;
         const pages=(sh.pages_done!=null||sh.pages_total!=null)?`${sh.pages_done??'–'}/${sh.pages_total??'–'} หน้า`:'';
         mc.font=rpFont(600,9.5); const pw=pages?mc.measureText(pages).width:0;
         const reserve=vw+(pw?pw+8:0);
@@ -1958,9 +1970,11 @@ async function drawMonthlyReport(student,logs,idx){
         sh.name.forEach((ln,i)=>{rpText(c,(i===0?'📄 ':'    ')+ln,P+14,yy+9,{font:rpFont(i===0?600:400,11),color:RP.t});yy+=14;});
         const tagX=P+CW-12;
         if(sh.pages)rpText(c,sh.pages,tagX,top+9,{font:rpFont(600,9.5),color:RP.t2,align:'right'});
-        const vx=tagX-(sh.pages?sh.pw+8:0);
-        c.fillStyle=sh.video?'#d1fae5':'#fef3c7'; rpRect(c,vx-sh.vw,top,sh.vw,13,6.5); c.fill();
-        rpText(c,sh.vtxt,vx-sh.vw/2,top+9,{font:rpFont(700,8.5),color:sh.video?'#065f46':'#92400e',align:'center'});
+        if(sh.vtxt){
+          const vx=tagX-(sh.pages?sh.pw+8:0);
+          c.fillStyle='#d1fae5'; rpRect(c,vx-sh.vw,top,sh.vw,13,6.5); c.fill();
+          rpText(c,sh.vtxt,vx-sh.vw/2,top+9,{font:rpFont(700,8.5),color:'#065f46',align:'center'});
+        }
         yy+=2;
       });
       if(it.hw){yy+=5;it.hw.forEach((ln,i)=>{rpText(c,(i===0?'📝 ':'    ')+ln,P+14,yy+9,{font:rpFont(400,10.5),color:RP.t2});yy+=14;});}
@@ -2245,9 +2259,9 @@ function sheetsHtml(row){
   const list=sheetList(row).filter(sh=>sh&&(sh.name||sh.pages_total!=null));
   if(!list.length)return '';
   return list.map(sh=>{
-    const vid=sh.video_done
-      ? '<span class="sh-tag sh-vid-y">วิดิโอจบ</span>'
-      : '<span class="sh-tag sh-vid-n">วิดิโอยังไม่จบ</span>';
+    // แสดงเฉพาะคาบที่ติ๊กจริง — คาบที่ไม่ติ๊กแปลว่า "วันนั้นไม่ได้ดูวิดิโอ" ไม่ใช่ "ยังดูไม่จบ"
+    // สถานะค้างจริงดูที่สรุปรายเดือน (pendingVideos) ซึ่งคิดจาก "เคยติ๊กไหม"
+    const vid=sh.video_done?'<span class="sh-tag sh-vid-y">✔ ดูวิดิโอจบ</span>':'';
     const pg=(sh.pages_done!=null||sh.pages_total!=null)
       ? `<span class="sh-pg">โจทย์ ${sh.pages_done??'–'}/${sh.pages_total??'–'} หน้า</span>` : '';
     return `<div class="sh-line">📄 <span class="sh-name">${escHtml(sh.name||'(ไม่ระบุชื่อชีท)')}</span>${vid}${pg}</div>`;
