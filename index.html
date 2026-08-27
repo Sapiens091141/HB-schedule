@@ -271,8 +271,8 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .ll-q{flex:1;min-width:180px;max-width:340px;}
 .ll-count{font-size:11px;color:var(--t3);margin-bottom:10px;}
 .ll-group{margin-bottom:18px;}
-.ll-shead{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-.ll-sname{font-size:14px;font-weight:700;}
+.ll-shead{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap;}
+.ll-sname{font-size:14px;font-weight:700;flex:1;min-width:0;}
 .ll-ssub{font-size:11px;color:var(--t3);font-weight:400;}
 .ll-item{background:var(--s);border:1px solid var(--bd);border-radius:11px;padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:box-shadow .15s;}
 .ll-item:hover{box-shadow:0 2px 10px rgba(0,0,0,.06);}
@@ -282,6 +282,13 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .ll-hw{font-size:12px;color:var(--t2);line-height:1.55;margin-top:4px;white-space:pre-wrap;word-break:break-word;}
 .ll-meta{font-size:11px;color:var(--t3);margin-top:5px;}
 .ll-latest{font-size:9px;font-weight:700;background:var(--ac2);color:#fff;padding:1px 7px;border-radius:20px;white-space:nowrap;}
+/* ปุ่มสร้างภาพสรุป + modal พรีวิว */
+.ll-report{margin-left:auto;flex-shrink:0;background:var(--acl);color:var(--ac);border:1px solid #bfdbfe;border-radius:20px;
+  padding:4px 11px;font-family:'Sarabun',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.ll-report:hover{background:var(--ac);color:#fff;border-color:var(--ac);}
+.rp-wrap{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px;max-height:58vh;overflow:auto;text-align:center;}
+.rp-wrap canvas{max-width:100%;height:auto;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.12);}
+.rp-note{font-size:11px;color:var(--t3);margin-top:8px;line-height:1.6;}
 /* ฟอร์ม — บล็อกชีท (เพิ่ม/ลบได้หลายแผ่น) */
 .sheet-row{border:1px solid var(--bd);border-radius:10px;padding:10px 11px;margin-bottom:8px;background:var(--bg);position:relative;}
 .sheet-head{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
@@ -441,6 +448,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
   .chip-log{padding:2px 3px 2px 6px;font-size:13px;opacity:.65;}
   .ll-sel,.ll-q{max-width:none;width:100%;}
   .sheet-sub{gap:10px;}
+  .ll-report{font-size:10px;padding:3px 9px;}
   .sheet-pg input{width:46px;}
   .vc-latest{margin:10px 12px 0;}
 
@@ -848,6 +856,18 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
     <button class="btn bd3" id="lessonDeleteBtn" style="display:none" onclick="deleteLessonLog()">ลบบันทึก</button>
     <button class="btn" onclick="closeModal('lessonOv')">ยกเลิก</button>
     <button class="btn bp" onclick="saveLessonLog()">บันทึก</button>
+  </div>
+</div>
+</div>
+<!-- Monthly Report Modal (admin) -->
+<div class="ov" id="reportOv" onclick="if(event.target===this)closeModal('reportOv')">
+<div class="mo" style="width:560px;">
+  <div class="moti" id="reportTitle">📤 ภาพสรุปรายเดือน</div>
+  <div class="rp-wrap" id="reportPreview"></div>
+  <div class="rp-note" id="reportNote"></div>
+  <div class="ma">
+    <button class="btn" onclick="closeModal('reportOv')">ปิด</button>
+    <button class="btn bp" id="reportDlBtn" onclick="downloadReportPng()">⬇ ดาวน์โหลด .png</button>
   </div>
 </div>
 </div>
@@ -1599,6 +1619,7 @@ async function renderLessons(){
       <div class="ll-shead">
         <div class="av ${avC(idx<0?0:idx)}">${s?ini(s):'?'}</div>
         <div class="ll-sname">${escHtml(s?s.nick:'#'+g.sid)} <span class="ll-ssub">${s?escHtml(s.name)+' · '+escHtml(s.grade):''}</span></div>
+        <button class="ll-report" onclick="openMonthlyReport(${g.sid})">📤 ภาพสรุป ${THMO[curM]} ${curY+543}</button>
       </div>
       ${g.list.map((r,i)=>`<div class="ll-item" onclick="openLessonLog(${r.student_id},'${r.iso_date}','${r.slot}')">
         <div class="ll-head">
@@ -1612,6 +1633,281 @@ async function renderLessons(){
       </div>`).join('')}
     </div>`;
   }).join('');
+}
+
+
+// ============================================================
+// MONTHLY REPORT — ภาพสรุปการเรียนรายเดือน (admin) → .png
+// วาดด้วย Canvas 2D เอง ไม่พึ่งไลบรารีนอก (โปรเจกต์นี้เคยเจอปัญหา CDN ล่มบนมือถือ)
+// ออกแบบที่ความกว้าง logical 400px แล้ว scale ขึ้นเป็นไฟล์ 1080px (แนวตั้ง ส่งไลน์)
+// ============================================================
+const RP={W:400,PAD:18,SCALE:2.7,
+  ac:'#2563a8',ac2:'#0e7c5a',wa:'#b45309',danger:'#9b1c1c',
+  t:'#1a1916',t2:'#6b6960',t3:'#9e9b90',bd:'#e2e0d8',bg:'#f7f6f2',s:'#ffffff',s2:'#f0efe9',acl:'#e8f0fb'};
+const RP_AV=[['#dbeafe','#1e40af'],['#d1fae5','#065f46'],['#ede9fe','#4c1d95'],
+             ['#fef3c7','#92400e'],['#fee2e2','#9b1c1c'],['#fce7f3','#9d174d']];
+let _reportCanvas=null,_reportName='',_rpLogo=undefined;
+
+function rpFont(weight,size){return`${weight} ${size}px Sarabun, sans-serif`;}
+function rpRect(ctx,x,y,w,h,r){
+  if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,y,w,h,r);return;}
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+}
+// ตัดบรรทัดแบบรู้จักภาษาไทย (ไทยไม่มีช่องว่างระหว่างคำ → ใช้ Intl.Segmenter, ถ้าไม่มีค่อยตัดทีละอักขระ)
+function rpWrap(ctx,text,maxW){
+  const out=[];
+  String(text==null?'':text).split('\n').forEach(para=>{
+    if(!para.trim()){out.push('');return;}
+    let segs;
+    try{segs=[...new Intl.Segmenter('th',{granularity:'word'}).segment(para)].map(x=>x.segment);}
+    catch(e){segs=[...para];}
+    let line='';
+    const push=()=>{if(line!=='')out.push(line);line='';};
+    for(let seg of segs){
+      if(ctx.measureText(seg).width>maxW){        // คำเดียวยาวเกินบรรทัด → ตัดกลางคำ
+        for(const ch of seg){
+          if(line&&ctx.measureText(line+ch).width>maxW)push();
+          line+=ch;
+        }
+        continue;
+      }
+      if(line&&ctx.measureText(line+seg).width>maxW){push();seg=seg.replace(/^\s+/,'');if(!seg)continue;}
+      line+=seg;
+    }
+    push();
+  });
+  return out.length?out:[''];
+}
+function rpText(ctx,txt,x,y,{font,color,align}={}){
+  if(font)ctx.font=font; if(color)ctx.fillStyle=color;
+  ctx.textAlign=align||'left'; ctx.textBaseline='alphabetic';
+  ctx.fillText(String(txt==null?'':txt),x,y);
+}
+function rpLogo(){
+  if(_rpLogo!==undefined)return _rpLogo;
+  _rpLogo=new Promise(res=>{
+    const im=new Image();
+    im.onload=()=>res(im); im.onerror=()=>res(null);  // ไม่มีโลโก้ก็ยังออกภาพได้
+    im.src='logo.png';
+  });
+  return _rpLogo;
+}
+
+// ---- ข้อมูล ----
+function monthLogsFor(sid){
+  const prefix=`${curY}-${String(curM+1).padStart(2,'0')}-`;
+  const byIso=logMap[sid]||{};
+  const out=[];
+  Object.keys(byIso).filter(iso=>iso.startsWith(prefix)).forEach(iso=>{
+    Object.keys(byIso[iso]).forEach(sl=>out.push(byIso[iso][sl]));
+  });
+  return out.sort((a,b)=>(a.iso_date+a.slot)<(b.iso_date+b.slot)?-1:1);
+}
+function logMinutes(r){
+  if(!r.start_time||!r.end_time)return 0;
+  const m=t=>{const p=String(t).split(':');return (+p[0])*60+(+p[1]);};
+  return Math.max(0,m(r.end_time)-m(r.start_time));
+}
+function reportStats(logs){
+  let minutes=0,sheets=0,vid=0,pd=0,pt=0,hasPages=false;
+  logs.forEach(r=>{
+    minutes+=logMinutes(r);
+    sheetList(r).forEach(sh=>{
+      sheets++; if(sh.video_done)vid++;
+      if(sh.pages_done!=null){pd+=sh.pages_done;hasPages=true;}
+      if(sh.pages_total!=null){pt+=sh.pages_total;hasPages=true;}
+    });
+  });
+  return{sessions:logs.length,minutes,sheets,vid,pd,pt,hasPages};
+}
+
+// ---- วาด ----
+async function drawMonthlyReport(student,logs,idx){
+  await document.fonts.ready;
+  await Promise.all([300,400,500,600,700].map(w=>document.fonts.load(`${w} 16px Sarabun`).catch(()=>{})));
+  const logo=await rpLogo();
+  const W=RP.W,P=RP.PAD,CW=W-P*2;
+  const st=reportStats(logs);
+
+  // --- pass 1: คำนวณความสูงจากเนื้อหาจริง ---
+  const mc=document.createElement('canvas').getContext('2d');
+  const days={};
+  logs.forEach(r=>{(days[r.iso_date]=days[r.iso_date]||[]).push(r);});
+  const dayKeys=Object.keys(days).sort();
+  const entries=dayKeys.map(iso=>{
+    const items=days[iso].map(r=>{
+      const sheets=sheetList(r).filter(sh=>sh&&(sh.name||sh.pages_total!=null)).map(sh=>{
+        // กันระยะให้ป้าย "วิดิโอ" + "x/y หน้า" ตามความกว้างจริง ไม่ใช่ค่าคงที่ (ชื่อชีทยาวจะได้ไม่ชนป้าย)
+        const vtxt=sh.video_done?'วิดิโอจบ':'วิดิโอยังไม่จบ';
+        mc.font=rpFont(700,8.5); const vw=mc.measureText(vtxt).width+10;
+        const pages=(sh.pages_done!=null||sh.pages_total!=null)?`${sh.pages_done??'–'}/${sh.pages_total??'–'} หน้า`:'';
+        mc.font=rpFont(600,9.5); const pw=pages?mc.measureText(pages).width:0;
+        const reserve=vw+(pw?pw+8:0);
+        mc.font=rpFont(400,11);
+        return{name:rpWrap(mc,sh.name||'(ไม่ระบุชื่อชีท)',Math.max(110,CW-46-reserve)),
+               video:!!sh.video_done,vtxt,vw,pages,pw};
+      });
+      mc.font=rpFont(400,10.5);
+      const hw=r.homework?rpWrap(mc,'การบ้าน: '+r.homework,CW-34):null;
+      const nt=r.teacher_note?rpWrap(mc,r.teacher_note,CW-38):null;
+      let h=6+17;                                           // ระยะห่างจากบล็อกก่อนหน้า + แถบ slot/เวลา
+      sheets.forEach(s=>{h+=Math.max(1,s.name.length)*14+2;});
+      if(hw)h+=hw.length*14+5;
+      if(nt)h+=nt.length*14+7;
+      return{r,sheets,hw,nt,h};
+    });
+    // สูงการ์ด = หัววันที่ 20 + เนื้อหา + ช่องว่างล่าง 11 · ค่าที่คืนรวมระยะห่างระหว่างการ์ด 8
+    return{iso,items,h:20+items.reduce((n,it)=>n+it.h,0)+11+8};
+  });
+
+  const HEAD=78, CARD=62, STATS=74, BARS=(st.hasPages||st.sheets)?54:0, SECT=30, FOOT=40;
+  const listH=entries.length?entries.reduce((n,e)=>n+e.h,0):46;
+  const H=Math.round(HEAD+CARD+STATS+BARS+SECT+listH+FOOT);
+
+  // --- pass 2: วาดจริง ---
+  const cv=document.createElement('canvas');
+  cv.width=Math.round(W*RP.SCALE); cv.height=Math.round(H*RP.SCALE);
+  const c=cv.getContext('2d');
+  c.scale(RP.SCALE,RP.SCALE);
+  c.textBaseline='alphabetic';
+  c.fillStyle=RP.bg; c.fillRect(0,0,W,H);
+
+  // header
+  c.fillStyle=RP.ac; c.fillRect(0,0,W,HEAD);
+  if(logo){
+    const lw=64,lh=logo.height*(lw/logo.width);
+    c.globalAlpha=.95; c.drawImage(logo,W-P-lw,16,lw,lh); c.globalAlpha=1;
+  }
+  rpText(c,'สรุปการเรียนประจำเดือน',P,32,{font:rpFont(500,11.5),color:'rgba(255,255,255,.82)'});
+  rpText(c,`${THMO[curM]} ${curY+543}`,P,58,{font:rpFont(700,24),color:'#fff'});
+
+  // การ์ดนักเรียน (ซ้อนขอบล่างของ header)
+  let y=HEAD-14;
+  c.fillStyle=RP.s; c.shadowColor='rgba(0,0,0,.10)'; c.shadowBlur=10; c.shadowOffsetY=2;
+  rpRect(c,P,y,CW,CARD,12); c.fill(); c.shadowColor='transparent'; c.shadowBlur=0; c.shadowOffsetY=0;
+  const av=RP_AV[(idx<0?0:idx)%6];
+  c.fillStyle=av[0]; c.beginPath(); c.arc(P+16+19,y+CARD/2,19,0,Math.PI*2); c.fill();
+  rpText(c,ini(student),P+16+19,y+CARD/2+6.5,{font:rpFont(700,17),color:av[1],align:'center'});
+  rpText(c,student.nick||student.name||'',P+62,y+27,{font:rpFont(700,19),color:RP.t});
+  rpText(c,`${student.name||''} · ${student.grade||''}`,P+62,y+45,{font:rpFont(400,11.5),color:RP.t2});
+  y+=CARD+16;
+
+  // สถิติ 3 ช่อง
+  const hrs=(st.minutes/60);
+  const tiles=[
+    ['เข้าเรียน',String(st.sessions),'ครั้ง',RP.ac],
+    ['รวมเวลาเรียน',(Math.round(hrs*10)/10).toString(),'ชั่วโมง',RP.ac2],
+    ['ชีทที่เรียน',String(st.sheets),'แผ่น',RP.wa]
+  ];
+  const tw=(CW-16)/3;
+  tiles.forEach((t,i)=>{
+    const x=P+i*(tw+8);
+    c.fillStyle=RP.s; c.strokeStyle=RP.bd; c.lineWidth=1;
+    rpRect(c,x,y,tw,58,10); c.fill(); c.stroke();
+    rpText(c,t[0],x+tw/2,y+18,{font:rpFont(500,10),color:RP.t3,align:'center'});
+    rpText(c,t[1],x+tw/2,y+40,{font:rpFont(700,21),color:t[3],align:'center'});
+    rpText(c,t[2],x+tw/2,y+52,{font:rpFont(400,9.5),color:RP.t2,align:'center'});
+  });
+  y+=58+16;
+
+  // แถบความคืบหน้า วิดิโอ / โจทย์
+  const bar=(label,done,total,unit,col)=>{
+    const pct=total>0?Math.min(1,done/total):0;
+    rpText(c,label,P,y+8,{font:rpFont(600,10.5),color:RP.t2});
+    rpText(c,total>0?`${done}/${total} ${unit}`:`— ${unit}`,P+CW,y+8,{font:rpFont(700,10.5),color:col,align:'right'});
+    c.fillStyle=RP.s2; rpRect(c,P,y+13,CW,7,4); c.fill();
+    if(pct>0){c.fillStyle=col; rpRect(c,P,y+13,Math.max(7,CW*pct),7,4); c.fill();}
+    y+=27;
+  };
+  if(BARS){ bar('วิดิโอที่ดูจบ',st.vid,st.sheets,'แผ่น',RP.ac2);
+            bar('โจทย์ที่ทำ',st.pd,st.pt,'หน้า',RP.ac); y+=0; }
+
+  // หัวข้อรายการ
+  rpText(c,'📚 เรียนอะไรไปบ้าง',P,y+16,{font:rpFont(700,13),color:RP.t});
+  y+=SECT;
+
+  if(!entries.length){
+    c.fillStyle=RP.s; c.strokeStyle=RP.bd; rpRect(c,P,y,CW,38,10); c.fill(); c.stroke();
+    rpText(c,'ยังไม่มีบันทึกการเรียนในเดือนนี้',W/2,y+23,{font:rpFont(500,11.5),color:RP.t3,align:'center'});
+    y+=46;
+  }
+  const SLC={M10:['#dbeafe','#1e40af'],M13:['#d1fae5','#065f46'],M15:['#ede9fe','#4c1d95'],M17:['#fef9c3','#854d0e']};
+  entries.forEach(e=>{
+    const dt=isoToDate(e.iso);
+    c.fillStyle=RP.s; c.strokeStyle=RP.bd; c.lineWidth=1;
+    rpRect(c,P,y,CW,e.h-8,10); c.fill(); c.stroke();
+    rpText(c,`${DTH[dt.getDay()]} ${dt.getDate()} ${THMO[dt.getMonth()]}`,P+12,y+18,{font:rpFont(700,11.5),color:RP.t});
+    let yy=y+20;
+    e.items.forEach(it=>{
+      yy+=6;
+      const sc=SLC[it.r.slot]||[RP.s2,RP.t2];
+      const tt=[hhmm(it.r.start_time),hhmm(it.r.end_time)].filter(Boolean).join('–');
+      c.fillStyle=sc[0]; rpRect(c,P+12,yy,34,14,7); c.fill();
+      rpText(c,it.r.slot,P+29,yy+10.5,{font:rpFont(700,9.5),color:sc[1],align:'center'});
+      if(tt)rpText(c,tt,P+52,yy+10.5,{font:rpFont(500,10),color:RP.t3});
+      yy+=17;
+      it.sheets.forEach(sh=>{
+        const top=yy;
+        sh.name.forEach((ln,i)=>{rpText(c,(i===0?'📄 ':'    ')+ln,P+14,yy+9,{font:rpFont(i===0?600:400,11),color:RP.t});yy+=14;});
+        const tagX=P+CW-12;
+        if(sh.pages)rpText(c,sh.pages,tagX,top+9,{font:rpFont(600,9.5),color:RP.t2,align:'right'});
+        const vx=tagX-(sh.pages?sh.pw+8:0);
+        c.fillStyle=sh.video?'#d1fae5':RP.s2; rpRect(c,vx-sh.vw,top,sh.vw,13,6.5); c.fill();
+        rpText(c,sh.vtxt,vx-sh.vw/2,top+9,{font:rpFont(700,8.5),color:sh.video?'#065f46':RP.t3,align:'center'});
+        yy+=2;
+      });
+      if(it.hw){yy+=5;it.hw.forEach((ln,i)=>{rpText(c,(i===0?'📝 ':'    ')+ln,P+14,yy+9,{font:rpFont(400,10.5),color:RP.t2});yy+=14;});}
+      if(it.nt){
+        yy+=7; const nTop=yy-4;
+        it.nt.forEach((ln,i)=>{rpText(c,(i===0?'💬 ':'    ')+ln,P+18,yy+9,{font:rpFont(400,10.5),color:RP.t2});yy+=14;});
+        c.fillStyle=RP.ac; rpRect(c,P+12,nTop,2.5,yy-nTop-2,1.5); c.fill();
+      }
+    });
+    y+=e.h;
+  });
+
+  // footer
+  const now=new Date();
+  rpText(c,`สร้างเมื่อ ${now.getDate()} ${THMO[now.getMonth()]} ${now.getFullYear()+543}`,P,H-16,{font:rpFont(400,9.5),color:RP.t3});
+  rpText(c,'ตารางเรียน HB',W-P,H-16,{font:rpFont(700,9.5),color:RP.t3,align:'right'});
+  return cv;
+}
+
+async function openMonthlyReport(sid){
+  try{requireAdmin();}catch(e){return;}
+  const idx=students.findIndex(x=>x.id===sid);
+  const s=idx>=0?students[idx]:null;
+  if(!s){showToast('ไม่พบข้อมูลนักเรียน');return;}
+  const logs=monthLogsFor(sid);
+  if(!logs.length){showToast(`${s.nick} ยังไม่มีบันทึกการเรียนในเดือน ${THMO[curM]} ${curY+543}`);return;}
+  showLoading(true);
+  try{
+    const cv=await drawMonthlyReport(s,logs,idx);
+    _reportCanvas=cv;
+    _reportName=`สรุปการเรียน-${(s.nick||s.name||'นักเรียน').replace(/[\\/:*?"<>|]/g,'')}-${THMO[curM]}${curY+543}.png`;
+    document.getElementById('reportTitle').textContent=`📤 ภาพสรุป ${THMO[curM]} ${curY+543} — ${s.nick}`;
+    const box=document.getElementById('reportPreview'); box.innerHTML=''; box.appendChild(cv);
+    document.getElementById('reportNote').textContent=
+      `ไฟล์ที่ได้: ${cv.width}×${cv.height} px · ${logs.length} คาบในเดือนนี้ · กดดาวน์โหลดแล้วส่งต่อให้ผู้ปกครองได้เลย`;
+    document.getElementById('reportOv').classList.add('open');
+  }catch(err){
+    console.error('drawMonthlyReport failed:',err);
+    showToast('สร้างภาพไม่สำเร็จ: '+(err.message||err));
+  }finally{showLoading(false);}
+}
+
+function downloadReportPng(){
+  if(!_reportCanvas)return;
+  _reportCanvas.toBlob(b=>{
+    if(!b){showToast('สร้างไฟล์ไม่สำเร็จ');return;}
+    const url=URL.createObjectURL(b);
+    const a=document.createElement('a');
+    a.href=url; a.download=_reportName||'report.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    showToast('ดาวน์โหลดแล้ว ✓');
+  },'image/png');
 }
 
 // ============================================================
