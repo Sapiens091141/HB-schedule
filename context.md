@@ -41,7 +41,9 @@
 | `schedules` | `student_id, iso_date (date), slots (text[])` — unique(student_id, iso_date) |
 | `allowed_users` | `email, role, student_ids (int[]), display_name` |
 | `leave_requests` | `id, student_id, iso_date, slot, reason, status (pending/approved/rejected), days_notice, requested_by, decided_by, decided_at` — unique(student_id, iso_date, slot) |
-| `lesson_logs` | `id, student_id, iso_date, slot, content, homework, created_by, created_at, updated_by, updated_at` — unique(student_id, iso_date, slot) |
+| `lesson_logs` | `id, student_id, iso_date, slot, start_time (time), end_time (time), sheets (jsonb), homework, teacher_note, created_by, created_at, updated_by, updated_at` — unique(student_id, iso_date, slot) |
+
+`lesson_logs.sheets` เก็บชีทได้หลายแผ่นต่อคาบ: `[{name, video_done, pages_done, pages_total}, ...]` (มี CHECK บังคับว่าต้องเป็น array)
 
 RLS เปิดบน `leave_requests`: admin เห็น/แก้ได้ทั้งหมด, viewer เข้าถึงเฉพาะของนักเรียนใน `student_ids` ตัวเอง (`= any(u.student_ids)`)
 
@@ -69,12 +71,14 @@ RLS เปิดบน `lesson_logs` เช่นกัน แต่**เข้�
 ### 4.4 ลงทะเบียนต้องตั้งชื่อผู้ใช้
 - ฟอร์มสมัครบังคับกรอก **ชื่อผู้ใช้/ชื่อจริง** (`display_name`) → admin เห็นตอนอนุมัติ · ชื่อ escape กัน XSS
 
-### 4.7 บันทึกเนื้อหาที่เรียน (lesson log)
+### 4.7 บันทึกการเรียน (lesson log)
 - เก็บ **รายคาบ** — 1 แถว = (นักเรียน, วันที่, ช่วงเวลา) → มีประวัติครบ และคำนวณ "ล่าสุดที่เรียน" ของแต่ละคนได้
-- **ครูบันทึก 2 ทาง:** (ก) แตะไอคอน 📝 บนชิปนักเรียนในตารางเรียน (แตะที่ตัวชิปยังเปิดหน้าแก้นักเรียนเหมือนเดิม) (ข) แท็บ **"📘 บันทึกการเรียน"** — จัดกลุ่มตามนักเรียน ป้าย "ล่าสุด" ที่คาบใหม่สุด + ค้นหาด้วยชื่อ/เนื้อหา/การบ้าน
-- ชิปที่มีบันทึกแล้วขีดเส้นใต้สีเขียว · ลบเนื้อหาจนว่างแล้วกดบันทึก = ลบบันทึกคาบนั้น
-- **viewer เห็นอย่างเดียว:** กล่อง "📘 ล่าสุดที่เรียน" บนหัวการ์ดนักเรียน (ข้ามเดือนได้) + บรรทัดเนื้อหาใต้คาบที่มีบันทึก + จุดเขียวบนคาบนั้น
-- เนื้อหา/การบ้าน render ผ่าน `escHtml()` ทุกจุด (กัน XSS) และคงบรรทัดใหม่ด้วย CSS `white-space:pre-wrap`
+- **สิ่งที่บันทึกต่อคาบ:** เวลาเข้า-เลิกเรียน · ชีทหลายแผ่น (ชื่อชีท + ติ๊กวิดิโอจบ + โจทย์ ทำได้/ทั้งหมด กี่หน้า) · การบ้าน · ความเห็นจากผู้สอน
+- **เวลาเข้า-เลิก** เติมเวลาของคาบมาให้ก่อน (M13 → 13:00/15:00) ครูแก้เฉพาะตอนนักเรียนมาสาย/กลับก่อน · มี validate ว่าเวลาเลิกต้องไม่ก่อนเวลาเข้า
+- **ครูบันทึก 2 ทาง:** (ก) แตะไอคอน 📝 บนชิปนักเรียนในตารางเรียน (แตะที่ตัวชิปยังเปิดหน้าแก้นักเรียนเหมือนเดิม — ใช้ `stopPropagation`) (ข) แท็บ **"📘 บันทึกการเรียน"** — จัดกลุ่มตามนักเรียน ป้าย "ล่าสุด" ที่คาบใหม่สุด + ค้นหาด้วยชื่อ/ชีท/การบ้าน/ความเห็น
+- ชิปที่มีบันทึกแล้วขีดเส้นใต้สีเขียว · ล้างจนว่างหมด (ทั้งชีท+การบ้าน+ความเห็น) แล้วกดบันทึก = ลบบันทึกคาบนั้น
+- **viewer เห็นอย่างเดียว (แต่เห็นครบทุกช่อง):** กล่อง "📘 ล่าสุดที่เรียน" บนหัวการ์ดนักเรียน (query แยก `limit 1` ต่อคน จึงข้ามเดือนได้) + บรรทัดรายละเอียดใต้คาบที่มีบันทึก + จุดเขียวบนคาบนั้น
+- ข้อความที่ครูพิมพ์ทั้งหมด render ผ่าน `escHtml()` (กัน XSS) และคงบรรทัดใหม่ด้วย CSS `white-space:pre-wrap` (ไม่แปลงเป็น `<br>` เพื่อไม่ให้ markup กลับเข้ามา)
 
 ### 4.5 ลืมรหัสผ่าน
 - ลิงก์ "ลืมรหัสผ่าน?" → `resetPasswordForEmail` ส่งอีเมล → คลิกลิงก์กลับมา (`PASSWORD_RECOVERY`) → ตั้งรหัสใหม่ (`updateUser`)
@@ -92,7 +96,7 @@ RLS เปิดบน `lesson_logs` เช่นกัน แต่**เข้�
 | `supabase-leave-migration.sql` | สร้าง `leave_requests` + RLS (ใช้ `student_ids`) | ✅ รันแล้ว |
 | `supabase-username-migration.sql` | เพิ่มคอลัมน์ `display_name` | ✅ รันแล้ว |
 | `supabase-line-notify.sql` | trigger + pg_net แจ้ง LINE (**มี token — gitignore ไว้**) | ✅ รันแล้ว |
-| `supabase-lesson-log-migration.sql` | สร้าง `lesson_logs` + RLS (admin เขียน / viewer อ่าน) | ⬜ **ยังไม่ได้รัน** |
+| `supabase-lesson-log-migration.sql` | **v2** — `lesson_logs` (เวลา/ชีท jsonb/ความเห็นครู) + RLS (admin เขียน / viewer อ่าน) · อัปเกรดจาก v1 ให้เอง (ย้าย `content` → ชีทแผ่นแรก แล้ว drop) | ✅ รันแล้ว |
 
 > ⚠️ `supabase-line-notify.sql` มี LINE Channel Access Token → ถูก `.gitignore` ไว้ **ห้าม commit ขึ้น repo**
 
@@ -132,4 +136,5 @@ RLS เปิดบน `lesson_logs` เช่นกัน แต่**เข้�
 
 | งาน | รายละเอียด |
 |---|---|
-| ฟีเจอร์บันทึกเนื้อหาที่เรียน | ตาราง `lesson_logs` (รายคาบ) + modal 📝 บนชิปตารางเรียน + แท็บที่ 5 "บันทึกการเรียน" + กล่อง "ล่าสุดที่เรียน" ในหน้า viewer · ดู §4.7 |
+| ฟีเจอร์บันทึกการเรียน | ตาราง `lesson_logs` (รายคาบ) + modal 📝 บนชิปตารางเรียน + แท็บที่ 5 "บันทึกการเรียน" + กล่อง "ล่าสุดที่เรียน" ในหน้า viewer · ดู §4.7 |
+| ขยายเป็น v2 | เพิ่มเวลาเข้า-เลิกเรียน, ชีทหลายแผ่น (ชื่อ/วิดิโอจบ/โจทย์กี่หน้า), ความเห็นจากผู้สอน · ตัดช่อง `content` ทิ้ง ใช้ชื่อชีทแทน |
