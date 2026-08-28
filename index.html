@@ -321,7 +321,11 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .sh-pg{font-size:11px;font-weight:600;color:var(--t2);white-space:nowrap;}
 .lg-time{font-size:11px;font-weight:700;color:var(--ac);background:var(--acl);padding:1px 7px;border-radius:20px;white-space:nowrap;}
 .lg-block{margin-top:5px;font-size:12px;color:var(--t2);line-height:1.55;white-space:pre-wrap;word-break:break-word;}
-.lg-note{border-left:3px solid var(--bd);padding-left:8px;}
+/* ความเห็นครูคือส่วนที่ผู้ปกครองอยากอ่านที่สุด — ให้พื้นหลังเด่นแยกออกจากชีท/การบ้าน
+   ใช้ม่วงเพราะสีอื่นถูกจองความหมายไปแล้ว: ฟ้า=เวลา/แอคเซนต์ · เขียว=ดูวิดิโอจบ · เหลือง=วิดิโอค้าง */
+.lg-note{margin-top:8px;background:#f5f3ff;border:1px solid #ddd6fe;border-left:4px solid #7c3aed;
+  border-radius:0 10px 10px 0;padding:7px 10px 8px;color:#4c1d95;font-size:12.5px;font-weight:500;}
+.lg-note b{display:block;font-size:10.5px;font-weight:800;color:#7c3aed;margin-bottom:2px;}
 
 /* ===== VIEWER MOBILE PAGE ===== */
 .viewer-page{display:none;flex-direction:column;min-height:100vh;background:var(--bg);}
@@ -1859,11 +1863,11 @@ async function drawMonthlyReport(student,logs,idx){
       });
       mc.font=rpFont(400,10.5);
       const hw=r.homework?rpWrap(mc,'การบ้าน: '+r.homework,CW-34):null;
-      const nt=r.teacher_note?rpWrap(mc,r.teacher_note,CW-38):null;
+      const nt=r.teacher_note?rpWrap(mc,r.teacher_note,CW-44):null;
       let h=6+17;                                           // ระยะห่างจากบล็อกก่อนหน้า + แถบ slot/เวลา
       sheets.forEach(s=>{h+=Math.max(1,s.name.length)*14+2;});
       if(hw)h+=hw.length*14+5;
-      if(nt)h+=nt.length*14+7;
+      if(nt)h+=nt.length*14+35;   // 7 เว้นบน + หัวข้อ/padding 26 + เว้นล่าง 2
       return{r,sheets,hw,nt,h};
     });
     // สูงการ์ด = หัววันที่ 20 + เนื้อหา + ช่องว่างล่าง 11 · ค่าที่คืนรวมระยะห่างระหว่างการ์ด 8
@@ -1979,9 +1983,17 @@ async function drawMonthlyReport(student,logs,idx){
       });
       if(it.hw){yy+=5;it.hw.forEach((ln,i)=>{rpText(c,(i===0?'📝 ':'    ')+ln,P+14,yy+9,{font:rpFont(400,10.5),color:RP.t2});yy+=14;});}
       if(it.nt){
-        yy+=7; const nTop=yy-4;
-        it.nt.forEach((ln,i)=>{rpText(c,(i===0?'💬 ':'    ')+ln,P+18,yy+9,{font:rpFont(400,10.5),color:RP.t2});yy+=14;});
-        c.fillStyle=RP.ac; rpRect(c,P+12,nTop,2.5,yy-nTop-2,1.5); c.fill();
+        // กล่องพื้นม่วงให้ความเห็นครูเด่นออกมาจากรายการชีท (สีเดียวกับ .lg-note บนเว็บ)
+        yy+=7;
+        const nTop=yy, nH=it.nt.length*14+26, nW=CW-24;
+        c.fillStyle='#f5f3ff'; c.strokeStyle='#ddd6fe'; c.lineWidth=1;
+        rpRect(c,P+12,nTop,nW,nH,8); c.fill(); c.stroke();
+        c.save(); rpRect(c,P+12,nTop,nW,nH,8); c.clip();
+        c.fillStyle='#7c3aed'; c.fillRect(P+12,nTop,3.5,nH); c.restore();
+        rpText(c,'💬 ความเห็นครู',P+23,nTop+14,{font:rpFont(700,9.5),color:'#7c3aed'});
+        let ny=nTop+16;
+        it.nt.forEach(ln=>{rpText(c,ln,P+23,ny+13,{font:rpFont(500,10.5),color:'#4c1d95'});ny+=14;});
+        yy=nTop+nH+2;
       }
     });
     y+=e.h;
@@ -2252,7 +2264,7 @@ function logTimeHtml(row){
 function logBodyHtml(row){
   return sheetsHtml(row)
     +(row.homework?`<div class="lg-block">\uD83D\uDCDD การบ้าน: ${escHtml(row.homework)}</div>`:'')
-    +(row.teacher_note?`<div class="lg-block lg-note">\uD83D\uDCAC ความเห็นครู: ${escHtml(row.teacher_note)}</div>`:'');
+    +(row.teacher_note?`<div class="lg-block lg-note"><b>\uD83D\uDCAC ความเห็นครู</b>${escHtml(row.teacher_note)}</div>`:'');
 }
 // HTML รายการชีทสำหรับ viewer + แท็บบันทึก (escape ทุกจุด)
 function sheetsHtml(row){
