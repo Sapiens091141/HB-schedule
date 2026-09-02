@@ -142,7 +142,8 @@ RLS เปิดบน `lesson_logs` เช่นกัน แต่**เข้�
 | `supabase-username-migration.sql` | เพิ่มคอลัมน์ `display_name` | ✅ รันแล้ว |
 | `supabase-line-notify.sql` | trigger + pg_net แจ้ง LINE (**มี token — gitignore ไว้**) | ✅ รันแล้ว |
 | `supabase-lesson-log-migration.sql` | **v2** — `lesson_logs` (เวลา/ชีท jsonb/ความเห็นครู) + RLS (admin เขียน / viewer อ่าน) · อัปเกรดจาก v1 ให้เอง (ย้าย `content` → ชีทแผ่นแรก แล้ว drop) | ✅ รันแล้ว |
-| `supabase-course-migration.sql` | เพิ่มคอลัมน์ `students.course` + index (ข้อมูลเดิมเป็น `'HB'` อัตโนมัติ) | ⏳ **ยังไม่ได้รัน** |
+| `supabase-course-migration.sql` | เพิ่มคอลัมน์ `students.course` + index (ข้อมูลเดิมเป็น `'HB'` อัตโนมัติ) | ✅ รันแล้ว |
+| `supabase-copy-hb-to-skill.sql` | คัดลอกรายชื่อ HB → Skill (ไม่คัดลอกตาราง) + ผูกผู้ปกครองเพิ่ม (ทางเลือก) · รันซ้ำได้ | ⏳ รอรัน |
 
 > ⚠️ `supabase-line-notify.sql` มี LINE Channel Access Token → ถูก `.gitignore` ไว้ **ห้าม commit ขึ้น repo**
 
