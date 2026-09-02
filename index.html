@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>ตารางเรียน HB</title>
+<title>ตารางเรียน Sapiens</title>
 
 <!-- PWA / Add to Home Screen -->
 <link rel="manifest" href="manifest.json">
@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="HB">
+<meta name="apple-mobile-web-app-title" content="Sapiens">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -89,6 +89,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .logout-btn{padding:5px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--s);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--t2);transition:all .15s;}
 .logout-btn:hover{border-color:var(--danger);color:var(--danger);}
 .mn{display:flex;align-items:center;gap:5px;}
+.cs{display:inline-flex;background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:2px;gap:2px;}
+.cs button{border:0;background:transparent;color:var(--t2);font-family:inherit;font-size:12px;font-weight:700;padding:5px 12px;border-radius:7px;cursor:pointer;white-space:nowrap;}
+.cs button:hover{color:var(--t);}
+.cs button.on{background:var(--ac);color:#fff;}
 .mb{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);background:var(--s);cursor:pointer;font-size:15px;color:var(--t2);display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .mb:hover{background:var(--s2);}
 .ml{font-weight:600;font-size:14px;min-width:135px;text-align:center;}
@@ -130,7 +134,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .dhd{font-size:10px;color:var(--t3);}
 .chip{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600;margin:1px;cursor:pointer;white-space:nowrap;}
 .chip:hover{filter:brightness(.92);}
-.chip-M10{background:#dbeafe;color:#1e40af;}.chip-M13{background:#d1fae5;color:#065f46;}.chip-M15{background:#ede9fe;color:#4c1d95;}.chip-M17{background:#fef9c3;color:#854d0e;}
+/* สีคาบมาจาก SLOT_PALETTE เป็น inline style — คาบที่เพิ่มใหม่จึงไม่ต้องเขียน CSS เพิ่ม */
 .cc{font-size:10px;color:var(--t3);margin-top:2px;}
 .ce{color:var(--t3);font-size:11px;text-align:center;padding:10px 0;}
 .mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
@@ -357,12 +361,11 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .vc-day-date{font-size:13px;font-weight:700;min-width:48px;color:var(--t2);padding-top:1px;}
 .vc-day-slots{display:flex;flex-wrap:wrap;gap:4px;}
 .vc-slot{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
-.vc-slot-M10{background:#dbeafe;color:#1e40af;}
-.vc-slot-M13{background:#d1fae5;color:#065f46;}
-.vc-slot-M15{background:#ede9fe;color:#4c1d95;}
-.vc-slot-M17{background:#fef9c3;color:#854d0e;}
 .vc-slot-time{font-size:10px;font-weight:400;margin-left:2px;opacity:.8;}
 .vc-empty{text-align:center;color:var(--t3);font-size:13px;padding:16px 0;}
+.vc-course-head{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--t2);margin:16px 2px 8px;}
+.vc-course-head:before{content:'';width:4px;height:14px;border-radius:2px;background:var(--ac);}
+.vc-course{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:var(--acl);color:var(--ac);margin-left:6px;vertical-align:middle;}
 .viewer-no-student{text-align:center;padding:48px 24px;color:var(--t3);}
 .viewer-no-student .big{font-size:48px;margin-bottom:12px;}
 .viewer-no-student p{font-size:14px;line-height:1.6;}
@@ -374,6 +377,14 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .fab{display:none;}
 .mobile-sched-cards{display:none;}
 .mobile-month-bar{display:none;}
+
+/* จอแคบกว่านี้ topbar เริ่มล้น (แถบเลือกคอร์สกินที่เพิ่ม ~95px)
+   ตัดอีเมลผู้ใช้ออกก่อน — เป็นของที่ไม่ต้องอ่านตลอดเวลา และมือถือก็ซ่อนอยู่แล้ว */
+@media (max-width: 1150px){
+  .topbar .user-badge{display:none;}
+  .topbar .ml{min-width:118px;font-size:13px;}
+  .topbar .cs button{padding:5px 9px;}
+}
 
 @media (max-width: 768px){
   /* ----- topbar: ย่อ ----- */
@@ -387,9 +398,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
   .logout-btn{padding:4px 8px;font-size:12px;}
 
   /* เดือน: ซ่อนใน topbar, แสดงเป็น bar ใต้ topbar แทน */
-  .topbar .mn{display:none;}
+  .topbar .mn,.topbar .cs{display:none;}
   .mobile-month-bar{
-    display:flex;align-items:center;justify-content:center;gap:8px;
+    display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
     background:var(--s);border-bottom:1px solid var(--bd);
     padding:8px 12px;position:sticky;top:calc(48px + env(safe-area-inset-top));z-index:99;
   }
@@ -581,7 +592,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
   <div class="login-card">
     <div class="login-logo">
       <img src="logo.png" alt="Sapiens Tutor" class="logo-img" onerror="this.style.display='none'">
-      <div class="logo-text">ตารางเรียน<span>HB</span></div>
+      <div class="logo-text">ตารางเรียน<span>Sapiens</span></div>
       <p>กรุณาเข้าสู่ระบบเพื่อดูตารางเรียน</p>
     </div>
     <div id="loginError" class="login-error"></div>
@@ -624,7 +635,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 <!-- ===== VIEWER PAGE (mobile-first) ===== -->
 <div class="viewer-page" id="viewerPage">
   <div class="viewer-topbar">
-    <div class="viewer-logo"><img src="logo.png" alt="Sapiens" class="viewer-brand-img" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none;">ตารางเรียน<span>HB</span></span></div>
+    <div class="viewer-logo"><img src="logo.png" alt="Sapiens" class="viewer-brand-img" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none;">ตารางเรียน<span>Sapiens</span></span></div>
     <div class="viewer-topbar-right">
       <div class="viewer-month-nav">
         <button class="viewer-month-btn" onclick="viewerChangeMonth(-1)">‹</button>
@@ -640,7 +651,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 <!-- ===== ADMIN APP PAGE ===== -->
 <div class="app-page" id="appPage">
   <div class="topbar">
-    <div class="logo"><img src="logo.png" alt="Sapiens" class="brand-img" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none;">ตารางเรียน<span>HB</span></span></div>
+    <div class="logo"><img src="logo.png" alt="Sapiens" class="brand-img" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none;">ตารางเรียน<span>Sapiens</span></span></div>
     <nav class="nav">
       <button class="nb active" onclick="showTab('schedule',this)">ตารางเรียน</button>
       <button class="nb" onclick="showTab('summary',this)">สรุปรายเดือน</button>
@@ -654,6 +665,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
         <span class="role-badge" id="userRoleLabel"></span>
       </div>
       <button class="import-btn" id="importBtnTop" style="display:none" onclick="openImport()">↑ Import CSV</button>
+      <div class="cs" id="courseSwitch"></div>
       <div class="mn">
         <button class="mb" onclick="changeMonth(-1)">‹</button>
         <div class="ml" id="monthLabel"></div>
@@ -664,6 +676,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
   </div>
   <!-- Mobile-only: month nav bar -->
   <div class="mobile-month-bar">
+    <div class="cs" id="courseSwitchMobile"></div>
     <button class="mb" onclick="changeMonth(-1)">‹</button>
     <div class="ml" id="monthLabelMobile"></div>
     <button class="mb" onclick="changeMonth(1)">›</button>
@@ -686,12 +699,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
       <div class="tc active" id="tab-schedule">
         <div class="sh">
           <h2>ตารางเรียนรายวัน</h2>
-          <div class="leg">
-            <div class="li"><div class="ld" style="background:#bfdbfe"></div>M10 (10:00–12:00)</div>
-            <div class="li"><div class="ld" style="background:#a7f3d0"></div>M13 (13:00–15:00)</div>
-            <div class="li"><div class="ld" style="background:#ddd6fe"></div>M15 (15:00–17:00)</div>
-            <div class="li"><div class="ld" style="background:#fef08a"></div>M17 (17:00–19:00)</div>
-          </div>
+          <div class="leg" id="slotLegend"></div>
         </div>
         <div id="schedWrap"></div>
         <!-- Mobile-only: card view -->
@@ -898,13 +906,62 @@ let sb=null; // created in boot() once the Supabase library has finished loading
 
 const THMO=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const DTH={0:'อา',1:'จ',2:'อ',3:'พ',4:'พฤ',5:'ศ',6:'ส'};
-const CDOW=[0,3,5,6];
-const SLOTS=['M10','M13','M15','M17'];
-const SLB={M10:'10:00–12:00',M13:'13:00–15:00',M15:'15:00–17:00',M17:'17:00–19:00'};
-const SLOT_SET=new Set(SLOTS);
+// ============================================================
+// COURSES — คอร์สที่เปิดสอน
+//   เพิ่มวันเรียน = เติมเลขวันใน cdow (0=อา … 6=ส)
+//   เพิ่มคาบ     = เติมบรรทัดใน slots
+// ทั้งสองอย่างไม่ต้องแก้ฐานข้อมูล เพราะ schedules เก็บ iso_date เป็นวันที่จริง
+// ไม่ได้เก็บวันในสัปดาห์ — วันที่ยังไม่เปิดสอนก็แค่ไม่มีช่องให้ติ๊ก
+//
+// รหัสคาบห้ามซ้ำข้ามคอร์ส — SLB/สีป้ายใช้ร่วมกันทั้งระบบ (viewer มีลูกคนละคอร์สได้)
+// และตัวตรวจ Import CSV อาศัยรหัสที่ไม่ซ้ำ เพื่อจับกรณี import ไฟล์ผิดคอร์ส
+// ============================================================
+const COURSES={
+  HB:   {label:'HB',    cdow:[0,3,5,6], slots:{M10:'10:00–12:00',M13:'13:00–15:00',M15:'15:00–17:00',M17:'17:00–19:00'}},
+  SKILL:{label:'Skill', cdow:[0,6],     slots:{S15:'15:00–16:00'}},
+};
+const COURSE_KEYS=Object.keys(COURSES);
+const DEFAULT_COURSE='HB';
+function courseOf(v){return COURSES[v]?v:DEFAULT_COURSE;}
+function courseLabel(v){return COURSES[courseOf(v)].label;}
+
+// SLB = ตารางแปลง รหัสคาบ → ช่วงเวลา ของ "ทุกคอร์ส" รวมกัน
+// บันทึกเก่า / การลา / ภาพสรุป ต้องอ่านรหัสคาบข้ามคอร์สได้เสมอ
+const SLB={};
+COURSE_KEYS.forEach(k=>Object.assign(SLB,COURSES[k].slots));
+const ALL_CDOW=[...new Set(COURSE_KEYS.flatMap(k=>COURSES[k].cdow))];
+
+// จานสีคาบ — ไล่ตามลำดับคาบภายในคอร์ส คาบที่เพิ่มใหม่จึงได้สีเอง ไม่ต้องเขียน CSS เพิ่ม
+const SLOT_PALETTE=[
+  {bg:'#dbeafe',fg:'#1e40af',dot:'#3b82f6'},
+  {bg:'#d1fae5',fg:'#065f46',dot:'#10b981'},
+  {bg:'#ede9fe',fg:'#4c1d95',dot:'#8b5cf6'},
+  {bg:'#fef9c3',fg:'#854d0e',dot:'#eab308'},
+  {bg:'#ffe4e6',fg:'#9f1239',dot:'#f43f5e'},
+  {bg:'#cffafe',fg:'#155e75',dot:'#06b6d4'},
+];
+const SLOT_COLOR={};
+COURSE_KEYS.forEach(k=>Object.keys(COURSES[k].slots).forEach((sl,i)=>{SLOT_COLOR[sl]=SLOT_PALETTE[i%SLOT_PALETTE.length];}));
+function slotCol(sl){return SLOT_COLOR[sl]||{bg:'#e5e7eb',fg:'#374151',dot:'#9ca3af'};}
+function slotStyle(sl){const c=slotCol(sl);return`background:${c.bg};color:${c.fg};`;}
+
+// คอร์สที่ admin กำลังดูอยู่ — CDOW/SLOTS/SLOT_SET เปลี่ยนตามคอร์ส จึงเป็น let
+let activeCourse=DEFAULT_COURSE;
+let CDOW=[],SLOTS=[],SLOT_SET=new Set();
+function applyCourse(k){
+  activeCourse=courseOf(k);
+  const c=COURSES[activeCourse];
+  CDOW=c.cdow.slice();
+  SLOTS=Object.keys(c.slots);
+  SLOT_SET=new Set(SLOTS);
+}
+try{applyCourse(localStorage.getItem('hbCourse'));}catch(e){applyCourse(DEFAULT_COURSE);}
 
 let currentUser=null,userRole=null,userStudentIds=[],userName='';
 let students=[],schedules=[];
+// รายชื่อทุกคอร์ส — ใช้ตอนผูกนักเรียนกับอีเมล และตอนแสดงคำขอลา
+// (สองอย่างนี้ข้ามคอร์สได้ จึงใช้ students ที่กรองคอร์สไว้แล้วไม่ได้)
+let allStudents=[],allStudentById={};
 let leaveMap={},pendingLeave=null;
 let logMap={},latestLogMap={},pendingLog=null;
 let lessonFeed=null,lessonFeedByStudent={};   // แคชของแท็บ "บันทึกการเรียน"
@@ -1035,6 +1092,7 @@ function setupAdminUI(){
   document.getElementById('adminTabBtn').style.display='';
   document.getElementById('importBtnTop').style.display='';
   document.getElementById('addStudentBtn').style.display='';
+  renderCourseSwitch();
   setupMobileAdminUI();
 }
 
@@ -1044,12 +1102,16 @@ function setupAdminUI(){
 async function loadData(){
   showLoading(true);
   try{
-    const{data:sData,error:sErr}=await sb.from('students').select('*').order('id');
+    await loadAllStudents();
+    const{data:sData,error:sErr}=await sb.from('students').select('*').eq('course',activeCourse).order('id');
     if(sErr)throw sErr;
     students=sData||[];
+    // ทุก query ที่เหลือกรองด้วย student_id ของคอร์สนี้ — ข้อมูลอีกคอร์สจึงไม่ปนเข้ามา
+    // และไม่กินโควตา limit ของ feed บันทึกการเรียน
+    const ids=courseIds();
     await loadSchedulesForMonth(curY,curM);
-    await loadLeavesForMonth(curY,curM,null);
-    await loadLessonLogsForMonth(curY,curM,null);
+    await loadLeavesForMonth(curY,curM,ids);
+    await loadLessonLogsForMonth(curY,curM,ids);
     renderAll();
     refreshAdminLeaveIndicator();
   }catch(err){
@@ -1060,9 +1122,40 @@ async function loadData(){
   }
 }
 
+// รายชื่อ "ทุกคอร์ส" — จำเป็นตอนผูกนักเรียนกับอีเมล (viewer มีลูกคนละคอร์สได้)
+// และตอนแสดงคำขอลา ซึ่งดึงมาทั้งระบบไม่ได้กรองคอร์ส
+// id ของนักเรียนในคอร์สที่เลือกอยู่ — ส่งเข้า loader ทุกตัวเพื่อไม่ให้ข้อมูลอีกคอร์สปนเข้ามา
+function courseIds(){return students.map(s=>s.id);}
+
+async function loadAllStudents(){
+  const{data,error}=await sb.from('students').select('id,name,nick,grade,course').order('id');
+  if(error){console.warn('loadAllStudents:',error.message||error);return;}
+  allStudents=data||[];
+  allStudentById={};
+  allStudents.forEach(s=>{allStudentById[s.id]=s;});
+}
+
+function renderCourseSwitch(){
+  const html=COURSE_KEYS.map(k=>
+    `<button class="${k===activeCourse?'on':''}" onclick="setCourse('${k}')">${escHtml(COURSES[k].label)}</button>`).join('');
+  ['courseSwitch','courseSwitchMobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html;});
+}
+async function setCourse(k){
+  if(courseOf(k)===activeCourse)return;
+  applyCourse(k);
+  try{localStorage.setItem('hbCourse',activeCourse);}catch(e){}
+  renderCourseSwitch();
+  // สถานะที่ผูกกับคอร์สเดิมต้องล้าง ไม่งั้นจะค้างข้ามคอร์ส
+  editingStudentId=null;openLessonStudent=null;filterTxt='';
+  invalidateLessonCaches();
+  await loadData();
+}
+
 async function loadSchedulesForMonth(y,m){
+  if(!students.length){schedules=[];return;}
   const{start,end}=monthRange(y,m);
-  const{data}=await sb.from('schedules').select('*').gte('iso_date',start).lte('iso_date',end);
+  const{data}=await sb.from('schedules').select('*')
+    .in('student_id',students.map(s=>s.id)).gte('iso_date',start).lte('iso_date',end);
   const schMap={};
   (data||[]).forEach(r=>{if(!schMap[r.student_id])schMap[r.student_id]={};schMap[r.student_id][r.iso_date]=r.slots;});
   students.forEach(s=>{s.schedule=schMap[s.id]||{};});
@@ -1073,11 +1166,12 @@ async function loadSchedulesForMonth(y,m){
 // LEAVE — data + helpers
 // ============================================================
 async function loadLeavesForMonth(y,m,ids){
+  leaveMap={};
+  if(ids&&!ids.length)return;   // คอร์สที่ยังไม่มีนักเรียน — ยิง query ไปก็ได้ของคนอื่นมา
   const{start,end}=monthRange(y,m);
   let q=sb.from('leave_requests').select('*').gte('iso_date',start).lte('iso_date',end);
   if(ids&&ids.length)q=q.in('student_id',ids);
   const{data}=await q;
-  leaveMap={};
   (data||[]).forEach(r=>{
     if(!leaveMap[r.student_id])leaveMap[r.student_id]={};
     if(!leaveMap[r.student_id][r.iso_date])leaveMap[r.student_id][r.iso_date]={};
@@ -1098,12 +1192,13 @@ function todayIso(){const n=new Date();return isoDate(n.getFullYear(),n.getMonth
 
 // logMap = เฉพาะเดือนที่กำลังแสดง (ใช้กับตารางเรียน + โน้ตใต้คาบของ viewer)
 async function loadLessonLogsForMonth(y,m,ids){
+  logMap={};
+  if(ids&&!ids.length)return;
   const{start,end}=monthRange(y,m);
   let q=sb.from('lesson_logs').select('*').gte('iso_date',start).lte('iso_date',end);
   if(ids&&ids.length)q=q.in('student_id',ids);
   const{data,error}=await q;
   if(error)console.warn('loadLessonLogsForMonth:',error.message||error);
-  logMap={};
   (data||[]).forEach(r=>{
     if(!logMap[r.student_id])logMap[r.student_id]={};
     if(!logMap[r.student_id][r.iso_date])logMap[r.student_id][r.iso_date]={};
@@ -1127,7 +1222,8 @@ async function loadLatestLessonLogs(ids){
 
 // feed ของแท็บ "บันทึกการเรียน" — ไม่ผูกกับเดือนที่เลือก
 async function loadLessonFeed(limit=300){
-  const{data,error}=await sb.from('lesson_logs').select('*')
+  if(!students.length){lessonFeed=[];return;}
+  const{data,error}=await sb.from('lesson_logs').select('*').in('student_id',students.map(s=>s.id))
     .order('iso_date',{ascending:false}).order('slot',{ascending:false}).limit(limit);
   if(error){showToast('โหลดบันทึกไม่สำเร็จ: '+(error.message||error));lessonFeed=[];return;}
   lessonFeed=data||[];
@@ -1155,7 +1251,9 @@ function sheetNamesFromMemory(){
 }
 async function loadSheetNames(){
   if(sheetNames)return sheetNames;
-  const{data,error}=await sb.from('lesson_logs').select('sheets')
+  if(!students.length)return sheetNamesFromMemory();
+  // จำกัดเฉพาะนักเรียนของคอร์สนี้ — ชื่อชีทของอีกคอร์สไม่ควรโผล่มาให้เลือกผิด
+  const{data,error}=await sb.from('lesson_logs').select('sheets').in('student_id',students.map(s=>s.id))
     .order('iso_date',{ascending:false}).limit(500);
   if(error){console.warn('loadSheetNames:',error.message||error);return sheetNamesFromMemory();}
   const seen=[];
@@ -1209,7 +1307,9 @@ async function loadViewerData(){
 
 function renderViewerPage(myStudents){
   document.getElementById('viewerMonthLabel').textContent=THMO[vM]+' '+(vY+543);
-  const classDays=getClassDays(vY,vM);
+  // viewer ไม่มี "คอร์สที่เลือกอยู่" — ลูกอาจเรียนคนละคอร์ส จึงใช้วันเรียนของทุกคอร์สรวมกัน
+  // (เดี๋ยวก็ถูกกรองเหลือเฉพาะวันที่มีตารางจริงอยู่แล้วด้วย entries ข้างล่าง)
+  const classDays=getClassDays(vY,vM,myStudents,ALL_CDOW);
   const content=document.getElementById('viewerContent');
 
   if(!userStudentIds||!userStudentIds.length){
@@ -1221,7 +1321,12 @@ function renderViewerPage(myStudents){
     return;
   }
 
-  content.innerHTML=`<div class="vc-hint">💡 แตะคาบเรียนเพื่อ <b>ขอลา</b> (≥2 วัน อนุมัติเอง · &lt;2 วัน รอครู)<br>🔁 แตะคาบที่ <b>ลาแล้ว (ขีดฆ่า)</b> ซ้ำอีกครั้ง เพื่อ <b>ยกเลิกการลา</b> — ยกเลิกเองได้ถ้าเหลือ ≥2 วัน<br>📘 คาบที่มีจุดเขียว คือคาบที่ครู <b>บันทึกการเรียน</b> ไว้แล้ว — ดูชีท / การบ้าน / ความเห็นครู ได้ที่บรรทัดใต้คาบนั้น</div>`+myStudents.map((s,i)=>{
+  // เรียงตามคอร์ส แล้วคั่นหัวข้อ — เฉพาะตอนที่มีลูกเรียนมากกว่า 1 คอร์ส
+  const cOrder=k=>{const i=COURSE_KEYS.indexOf(courseOf(k));return i<0?99:i;};
+  const sorted=myStudents.slice().sort((a,b)=>cOrder(a.course)-cOrder(b.course)||a.id-b.id);
+  const multiCourse=new Set(sorted.map(s=>courseOf(s.course))).size>1;
+
+  content.innerHTML=`<div class="vc-hint">💡 แตะคาบเรียนเพื่อ <b>ขอลา</b> (≥2 วัน อนุมัติเอง · &lt;2 วัน รอครู)<br>🔁 แตะคาบที่ <b>ลาแล้ว (ขีดฆ่า)</b> ซ้ำอีกครั้ง เพื่อ <b>ยกเลิกการลา</b> — ยกเลิกเองได้ถ้าเหลือ ≥2 วัน<br>📘 คาบที่มีจุดเขียว คือคาบที่ครู <b>บันทึกการเรียน</b> ไว้แล้ว — ดูชีท / การบ้าน / ความเห็นครู ได้ที่บรรทัดใต้คาบนั้น</div>`+sorted.map((s,i)=>{
     const entries=classDays.filter(d=>(s.schedule[d.iso]||[]).length>0);
     const tot=entries.reduce((n,d)=>n+(s.schedule[d.iso]||[]).length,0);
     const daysHtml=entries.length ? entries.map(d=>{
@@ -1231,16 +1336,16 @@ function renderViewerPage(myStudents){
         <div class="vc-day-main">
           <div class="vc-day-slots">${slots.map(sl=>{
             const lv=leaveStatus(s.id,d.iso,sl);
-            let cls='vc-slot vc-slot-'+sl,badge='';
+            let cls='vc-slot',badge='';
             if(lv&&lv.status==='approved'){cls+=' lv-appr';badge='<span class="vc-slot-badge lv-tag-a">ลา</span>';}
             else if(lv&&lv.status==='pending'){cls+=' lv-pend';badge='<span class="vc-slot-badge lv-tag-p">รอลา</span>';}
             const dot=lessonLog(s.id,d.iso,sl)?'<span class="vc-slot-dot" title="มีบันทึกเนื้อหา"></span>':'';
-            return`<span class="${cls}" onclick="openLeave(${s.id},'${d.iso}','${sl}')">${sl} <span class="vc-slot-time">${SLB[sl]}</span>${badge}${dot}</span>`;
+            return`<span class="${cls}" style="${slotStyle(sl)}" onclick="openLeave(${s.id},'${d.iso}','${sl}')">${sl} <span class="vc-slot-time">${SLB[sl]||''}</span>${badge}${dot}</span>`;
           }).join('')}</div>
           ${slots.map(sl=>{
             const lg=lessonLog(s.id,d.iso,sl);
             if(!lg)return '';
-            return`<div class="vc-note"><span class="vc-note-slot vc-slot-${sl}">${sl}</span><span class="vc-note-c">${logTimeHtml(lg)}${logBodyHtml(lg)}</span></div>`;
+            return`<div class="vc-note"><span class="vc-note-slot" style="${slotStyle(sl)}">${sl}</span><span class="vc-note-c">${logTimeHtml(lg)}${logBodyHtml(lg)}</span></div>`;
           }).join('')}
         </div>
       </div>`;
@@ -1253,12 +1358,14 @@ function renderViewerPage(myStudents){
       <div class="vc-latest-c">${logBodyHtml(latest)||'<span style="color:var(--t3);">(ยังไม่ได้ระบุรายละเอียด)</span>'}</div>
     </div>`:'';
 
-    return`<div class="vc">
+    const head=(multiCourse&&(i===0||courseOf(sorted[i-1].course)!==courseOf(s.course)))
+      ?`<div class="vc-course-head">คอร์ส ${escHtml(courseLabel(s.course))}</div>`:'';
+    return head+`<div class="vc">
       <div class="vc-header">
         <div class="vc-avatar a${i%6}">${ini(s)}</div>
         <div>
-          <div class="vc-name">${s.nick}</div>
-          <div class="vc-sub">${s.name} · ${s.grade}</div>
+          <div class="vc-name">${escHtml(s.nick)}${multiCourse?`<span class="vc-course">${escHtml(courseLabel(s.course))}</span>`:''}</div>
+          <div class="vc-sub">${escHtml(s.name)} · ${escHtml(s.grade)}</div>
         </div>
         <div class="vc-count">
           <div class="vc-count-num">${tot}</div>
@@ -1379,12 +1486,31 @@ function isoToDate(iso){
   const[y,m,d]=iso.split('-').map(Number);
   return new Date(y,m-1,d);
 }
-function getClassDays(y,m){
+// วันเรียน = วันตามคอนฟิกคอร์ส ∪ วันที่มีข้อมูลจริงในเดือนนั้น
+// ส่วนที่สองสำคัญ: ถ้าวันหนึ่งคอร์สย้าย/เลิกวันเรียน ตารางเดือนเก่าต้องไม่หายไปจากหน้าจอ
+function getClassDays(y,m,list,cdow){
+  const src=list||students, dows=cdow||CDOW;
+  const prefix=`${y}-${String(m+1).padStart(2,'0')}-`;
+  const extra=new Set();
+  (src||[]).forEach(s=>Object.entries(s.schedule||{}).forEach(([iso,sl])=>{
+    if(iso.startsWith(prefix)&&sl&&sl.length)extra.add(iso);
+  }));
   const r=[];const d=new Date(y,m,1);
   while(d.getMonth()===m){
-    if(CDOW.includes(d.getDay()))r.push({iso:isoDate(y,m,d.getDate()),date:d.getDate(),dow:d.getDay(),dayTh:DTH[d.getDay()]});
+    const iso=isoDate(y,m,d.getDate());
+    if(dows.includes(d.getDay())||extra.has(iso))r.push({iso,date:d.getDate(),dow:d.getDay(),dayTh:DTH[d.getDay()]});
     d.setDate(d.getDate()+1);
   }return r;
+}
+// คาบที่ต้องแสดง = คาบตามคอนฟิก ∪ คาบที่มีข้อมูลจริง (กันคาบที่เลิกใช้แล้วทำข้อมูลเก่าหาย)
+function visibleSlots(y,m,list){
+  const src=list||students;
+  const prefix=`${y}-${String(m+1).padStart(2,'0')}-`;
+  const extra=[];
+  (src||[]).forEach(s=>Object.entries(s.schedule||{}).forEach(([iso,sl])=>{
+    if(iso.startsWith(prefix))(sl||[]).forEach(x=>{if(!SLOT_SET.has(x)&&!extra.includes(x))extra.push(x);});
+  }));
+  return extra.length?SLOTS.concat(extra.sort()):SLOTS;
 }
 function getSlots(s,iso){return(s.schedule||{})[iso]||[];}
 function totalInMonth(s,y,m){
@@ -1433,7 +1559,15 @@ function showPage(p){
 // ============================================================
 // RENDER (admin)
 // ============================================================
+function renderSlotLegend(){
+  const el=document.getElementById('slotLegend');
+  if(!el)return;
+  el.innerHTML=visibleSlots(curY,curM).map(sl=>
+    `<div class="li"><div class="ld" style="background:${slotCol(sl).dot}"></div>${sl} (${SLB[sl]||''})</div>`).join('');
+}
+
 function renderAll(){
+  renderCourseSwitch();renderSlotLegend();
   const monthLabel=THMO[curM]+' '+(curY+543);
   document.getElementById('monthLabel').textContent=monthLabel;
   const mobLabel=document.getElementById('monthLabelMobile');
@@ -1491,31 +1625,31 @@ function renderMobileSched(){
   const wrap=document.getElementById('mobileSchedCards');
   if(!wrap)return;
   const classDays=getClassDays(curY,curM);
-  const hasData=classDays.some(d=>students.some(s=>SLOTS.some(sl=>getSlots(s,d.iso).includes(sl))));
-  if(!hasData){wrap.innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้</strong>กด ⚙️ จัดการ → Import CSV หรือกด ➕ เพื่อเพิ่มนักเรียน</div>`;return;}
-  const slotColors={M10:'#3b82f6',M13:'#10b981',M15:'#8b5cf6',M17:'#eab308'};
+  const SL=visibleSlots(curY,curM);
+  const hasData=classDays.some(d=>students.some(s=>SL.some(sl=>getSlots(s,d.iso).includes(sl))));
+  if(!hasData){wrap.innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้ (คอร์ส ${escHtml(courseLabel(activeCourse))})</strong>กด ⚙️ จัดการ → Import CSV หรือกด ➕ เพื่อเพิ่มนักเรียน</div>`;return;}
   wrap.innerHTML=classDays.map(d=>{
-    const totalDay=SLOTS.reduce((n,sl)=>n+students.filter(s=>getSlots(s,d.iso).includes(sl)).length,0);
+    const totalDay=SL.reduce((n,sl)=>n+students.filter(s=>getSlots(s,d.iso).includes(sl)).length,0);
     if(totalDay===0)return ''; // ซ่อนวันที่ไม่มีเรียน เพื่อ scroll สั้นลง
-    const slotsHtml=SLOTS.map(sl=>{
+    const slotsHtml=SL.map(sl=>{
       const here=students.filter(s=>getSlots(s,d.iso).includes(sl));
       let att=0,lvc=0;
       const chipsHtml=here.length
         ? here.map(s=>{
             const lv=leaveStatus(s.id,d.iso,sl);
-            let cls='chip chip-'+sl,tag='';
+            let cls='chip',tag='';
             if(lv&&lv.status==='approved'){cls+=' lv-appr';tag='<span class="lv-tag lv-tag-a">ลา</span>';lvc++;}
             else{att++;if(lv&&lv.status==='pending'){cls+=' lv-pend';tag='<span class="lv-tag lv-tag-p">รอลา</span>';}}
             const lg=lessonLog(s.id,d.iso,sl);
             if(lg)cls+=' has-log';
             const logBtn=`<button class="chip-log" title="${lg?escHtml(logSummaryText(lg)):'บันทึกการเรียน'}" onclick="event.stopPropagation();openLessonLog(${s.id},'${d.iso}','${sl}')">📝</button>`;
-            return`<span class="${cls}" onclick="openEdit(${s.id})">${escHtml(s.nick)}${tag}${logBtn}</span>`;
+            return`<span class="${cls}" style="${slotStyle(sl)}" onclick="openEdit(${s.id})">${escHtml(s.nick)}${tag}${logBtn}</span>`;
           }).join('')
         : '<span class="msc-empty">— ไม่มี —</span>';
       return`<div class="msc-slot">
         <div class="msc-slot-label">
-          <span class="msc-slot-dot" style="background:${slotColors[sl]}"></span>
-          ${sl} · ${SLB[sl]} ${here.length?`<span style="color:var(--t3);font-weight:400;margin-left:auto;">${att} คน${lvc?` · ลา ${lvc}`:''}</span>`:''}
+          <span class="msc-slot-dot" style="background:${slotCol(sl).dot}"></span>
+          ${sl} · ${SLB[sl]||''} ${here.length?`<span style="color:var(--t3);font-weight:400;margin-left:auto;">${att} คน${lvc?` · ลา ${lvc}`:''}</span>`:''}
         </div>
         <div class="msc-chips">${chipsHtml}</div>
       </div>`;
@@ -1532,13 +1666,14 @@ function renderMobileSched(){
 
 function renderSchedule(){
   const classDays=getClassDays(curY,curM);
-  const hasData=classDays.some(d=>students.some(s=>SLOTS.some(sl=>getSlots(s,d.iso).includes(sl))));
-  if(!hasData){document.getElementById('schedWrap').innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้</strong>กด "Import CSV" เพื่อเพิ่มข้อมูล หรือคลิกชื่อนักเรียนเพื่อกรอกด้วยมือ</div>`;return;}
+  const SL=visibleSlots(curY,curM);
+  const hasData=classDays.some(d=>students.some(s=>SL.some(sl=>getSlots(s,d.iso).includes(sl))));
+  if(!hasData){document.getElementById('schedWrap').innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้ (คอร์ส ${escHtml(courseLabel(activeCourse))})</strong>กด "Import CSV" เพื่อเพิ่มข้อมูล หรือคลิกชื่อนักเรียนเพื่อกรอกด้วยมือ</div>`;return;}
   let h='<div class="sw"><table class="st"><thead><tr><th style="min-width:105px;">ช่วงเวลา</th>';
   classDays.forEach(d=>{h+=`<th><div class="dhn">${d.date}</div><div class="dhd">${d.dayTh}</div></th>`;});
   h+='</tr></thead><tbody>';
-  SLOTS.forEach(sl=>{
-    h+=`<tr><td class="tsl">${SLB[sl]}<br><span style="font-weight:400;font-size:10px;color:var(--t3);">(${sl})</span></td>`;
+  SL.forEach(sl=>{
+    h+=`<tr><td class="tsl">${SLB[sl]||''}<br><span style="font-weight:400;font-size:10px;color:var(--t3);">(${sl})</span></td>`;
     classDays.forEach(d=>{
       const here=students.filter(s=>getSlots(s,d.iso).includes(sl));
       h+=`<td><div>`;
@@ -1547,13 +1682,13 @@ function renderSchedule(){
         let att=0,lvc=0;
         here.forEach(s=>{
           const lv=leaveStatus(s.id,d.iso,sl);
-          let cls='chip chip-'+sl,tag='';
+          let cls='chip',tag='';
           if(lv&&lv.status==='approved'){cls+=' lv-appr';tag='<span class="lv-tag lv-tag-a">ลา</span>';lvc++;}
           else{att++;if(lv&&lv.status==='pending'){cls+=' lv-pend';tag='<span class="lv-tag lv-tag-p">รอลา</span>';}}
           const lg=lessonLog(s.id,d.iso,sl);
           if(lg)cls+=' has-log';
           const logBtn=`<button class="chip-log" title="${lg?escHtml(logSummaryText(lg)):'บันทึกการเรียน'}" onclick="event.stopPropagation();openLessonLog(${s.id},'${d.iso}','${sl}')">📝</button>`;
-          h+=`<span class="${cls}" onclick="openEdit(${s.id})" title="${escHtml(s.name)}">${escHtml(s.nick)}${tag}${logBtn}</span>`;
+          h+=`<span class="${cls}" style="${slotStyle(sl)}" onclick="openEdit(${s.id})" title="${escHtml(s.name)}">${escHtml(s.nick)}${tag}${logBtn}</span>`;
         });
         h+=`<div class="cc">${att} คน${lvc?` · ลา ${lvc}`:''}</div>`;
       }
@@ -1592,18 +1727,19 @@ function renderSummary(){
 
 function renderHeatmap(){
   const classDays=getClassDays(curY,curM);
-  const hasData=classDays.some(d=>students.some(s=>SLOTS.some(sl=>getSlots(s,d.iso).includes(sl))));
-  if(!hasData){document.getElementById('hmWrap').innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้</strong></div>`;document.getElementById('hmStats').innerHTML='';return;}
+  const SL=visibleSlots(curY,curM);
+  const hasData=classDays.some(d=>students.some(s=>SL.some(sl=>getSlots(s,d.iso).includes(sl))));
+  if(!hasData){document.getElementById('hmWrap').innerHTML=`<div class="no-data"><strong>ยังไม่มีข้อมูลเดือนนี้ (คอร์ส ${escHtml(courseLabel(activeCourse))})</strong></div>`;document.getElementById('hmStats').innerHTML='';return;}
   const cnts={};
-  classDays.forEach(d=>{cnts[d.iso]={};SLOTS.forEach(sl=>{cnts[d.iso][sl]=students.filter(s=>getSlots(s,d.iso).includes(sl)&&!isApprovedLeave(s.id,d.iso,sl)).length;});});
-  const mx=Math.max(...classDays.flatMap(d=>SLOTS.map(sl=>cnts[d.iso][sl])),1);
+  classDays.forEach(d=>{cnts[d.iso]={};SL.forEach(sl=>{cnts[d.iso][sl]=students.filter(s=>getSlots(s,d.iso).includes(sl)&&!isApprovedLeave(s.id,d.iso,sl)).length;});});
+  const mx=Math.max(...classDays.flatMap(d=>SL.map(sl=>cnts[d.iso][sl])),1);
   function bg(n){if(!n)return'var(--s2)';const r=n/mx;if(r<.25)return'#bfdbfe';if(r<.5)return'#93c5fd';if(r<.75)return'#60a5fa';return'#2563eb';}
   function tc(n){return(n/mx)>.45?'#fff':'#1e40af';}
   let h='<div class="hw"><table class="ht"><thead><tr><th>ช่วงเวลา</th>';
   classDays.forEach(d=>{h+=`<th>${d.date}<br><span style="font-weight:400;">${d.dayTh}</span></th>`;});
   h+='</tr></thead><tbody>';
-  SLOTS.forEach(sl=>{
-    h+=`<tr><th style="text-align:left;padding:7px 12px;white-space:nowrap;">${SLB[sl]}<br><span style="font-weight:400;font-size:10px;color:var(--t3);">(${sl})</span></th>`;
+  SL.forEach(sl=>{
+    h+=`<tr><th style="text-align:left;padding:7px 12px;white-space:nowrap;">${SLB[sl]||''}<br><span style="font-weight:400;font-size:10px;color:var(--t3);">(${sl})</span></th>`;
     classDays.forEach(d=>{const n=cnts[d.iso][sl];h+=`<td style="background:${bg(n)};color:${tc(n)};">${n}<small>คน</small></td>`;});
     h+='</tr>';
   });
@@ -1611,8 +1747,8 @@ function renderHeatmap(){
   document.getElementById('hmWrap').innerHTML=h;
   let sh='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;">';
   classDays.forEach(d=>{
-    const tot=SLOTS.reduce((s,sl)=>s+cnts[d.iso][sl],0);
-    const mx2=Math.max(...SLOTS.map(sl=>cnts[d.iso][sl]));
+    const tot=SL.reduce((s,sl)=>s+cnts[d.iso][sl],0);
+    const mx2=Math.max(...SL.map(sl=>cnts[d.iso][sl]));
     sh+=`<div class="sk blue" style="padding:10px 12px;"><div class="sl2">${d.dayTh} ${d.date}</div><div class="sv" style="font-size:19px;">${tot}</div><div class="ss">ครั้ง · max ${mx2}/slot</div></div>`;
   });
   document.getElementById('hmStats').innerHTML=sh+'</div>';
@@ -1706,7 +1842,7 @@ async function renderLessons(){
         <div class="ll-head">
           ${i===0?'<span class="ll-latest">ล่าสุด</span>':''}
           <span class="ll-date">${fmtIsoTh(r.iso_date)}</span>
-          <span class="chip chip-${r.slot}" style="cursor:inherit;">${r.slot} · ${SLB[r.slot]||''}</span>
+          <span class="chip" style="cursor:inherit;${slotStyle(r.slot)}">${r.slot} · ${SLB[r.slot]||''}</span>
           ${logTimeHtml(r)}
         </div>
         <div class="ll-content">${logBodyHtml(r)||'<span style="color:var(--t3);font-size:12px;">(ยังไม่ได้ระบุรายละเอียด)</span>'}</div>
@@ -1895,7 +2031,7 @@ async function drawMonthlyReport(student,logs,idx){
     const lw=64,lh=logo.height*(lw/logo.width);
     c.globalAlpha=.95; c.drawImage(logo,W-P-lw,16,lw,lh); c.globalAlpha=1;
   }
-  rpText(c,'สรุปการเรียนประจำเดือน',P,32,{font:rpFont(500,11.5),color:'rgba(255,255,255,.82)'});
+  rpText(c,`สรุปการเรียนประจำเดือน · คอร์ส ${courseLabel(student.course)}`,P,32,{font:rpFont(500,11.5),color:'rgba(255,255,255,.82)'});
   rpText(c,`${THMO[curM]} ${curY+543}`,P,58,{font:rpFont(700,24),color:'#fff'});
 
   // การ์ดนักเรียน (ซ้อนขอบล่างของ header)
@@ -1954,7 +2090,6 @@ async function drawMonthlyReport(student,logs,idx){
     rpText(c,'ยังไม่มีบันทึกการเรียนในเดือนนี้',W/2,y+23,{font:rpFont(500,11.5),color:RP.t3,align:'center'});
     y+=46;
   }
-  const SLC={M10:['#dbeafe','#1e40af'],M13:['#d1fae5','#065f46'],M15:['#ede9fe','#4c1d95'],M17:['#fef9c3','#854d0e']};
   entries.forEach(e=>{
     const dt=isoToDate(e.iso);
     c.fillStyle=RP.s; c.strokeStyle=RP.bd; c.lineWidth=1;
@@ -1963,7 +2098,7 @@ async function drawMonthlyReport(student,logs,idx){
     let yy=y+20;
     e.items.forEach(it=>{
       yy+=6;
-      const sc=SLC[it.r.slot]||[RP.s2,RP.t2];
+      const sc=SLOT_COLOR[it.r.slot]?[slotCol(it.r.slot).bg,slotCol(it.r.slot).fg]:[RP.s2,RP.t2];
       const tt=[hhmm(it.r.start_time),hhmm(it.r.end_time)].filter(Boolean).join('–');
       c.fillStyle=sc[0]; rpRect(c,P+12,yy,34,14,7); c.fill();
       rpText(c,it.r.slot,P+29,yy+10.5,{font:rpFont(700,9.5),color:sc[1],align:'center'});
@@ -2002,7 +2137,7 @@ async function drawMonthlyReport(student,logs,idx){
   // footer
   const now=new Date();
   rpText(c,`สร้างเมื่อ ${now.getDate()} ${THMO[now.getMonth()]} ${now.getFullYear()+543}`,P,H-16,{font:rpFont(400,9.5),color:RP.t3});
-  rpText(c,'ตารางเรียน HB',W-P,H-16,{font:rpFont(700,9.5),color:RP.t3,align:'right'});
+  rpText(c,`ตารางเรียน ${courseLabel(student.course)}`,W-P,H-16,{font:rpFont(700,9.5),color:RP.t3,align:'right'});
   return cv;
 }
 
@@ -2017,8 +2152,8 @@ async function openMonthlyReport(sid){
   try{
     const cv=await drawMonthlyReport(s,logs,idx);
     _reportCanvas=cv;
-    _reportName=`สรุปการเรียน-${(s.nick||s.name||'นักเรียน').replace(/[\\/:*?"<>|]/g,'')}-${THMO[curM]}${curY+543}.png`;
-    document.getElementById('reportTitle').textContent=`📤 ภาพสรุป ${THMO[curM]} ${curY+543} — ${s.nick}`;
+    _reportName=`สรุปการเรียน-${courseLabel(s.course)}-${(s.nick||s.name||'นักเรียน').replace(/[\\/:*?"<>|]/g,'')}-${THMO[curM]}${curY+543}.png`;
+    document.getElementById('reportTitle').textContent=`📤 ภาพสรุป ${THMO[curM]} ${curY+543} — ${s.nick} · คอร์ส ${courseLabel(s.course)}`;
     const box=document.getElementById('reportPreview'); box.innerHTML=''; box.appendChild(cv);
     document.getElementById('reportNote').textContent=
       `ไฟล์ที่ได้: ${cv.width}×${cv.height} px · ${logs.length} คาบในเดือนนี้ · กดดาวน์โหลดแล้วส่งต่อให้ผู้ปกครองได้เลย`;
@@ -2074,9 +2209,11 @@ async function renderAdmin(){
   document.getElementById('usersList').innerHTML=active.length
     ? active.map(u=>{
         const ids=u.student_ids||[];
-        const linkedNames=ids.map(id=>{const s=students.find(x=>x.id===id);return s?`<span class="stag">${s.nick}<button onclick="unlinkStudent('${u.email}',${id})">×</button></span>`:'';}).join('');
-        const unlinkedStudents=students.filter(s=>!ids.includes(s.id));
-        const selectOpts=unlinkedStudents.map(s=>`<option value="${s.id}">${s.nick} (${s.name})</option>`).join('');
+        // ใช้ allStudents ไม่ใช่ students — ผู้ปกครองมีลูกคนละคอร์สได้
+        // ถ้าใช้รายชื่อที่กรองคอร์สไว้ จะผูกนักเรียนอีกคอร์สไม่ได้ และของที่ผูกไว้แล้วจะโชว์เป็นค่าว่าง
+        const linkedNames=ids.map(id=>{const s=allStudentById[id];return s?`<span class="stag">${escHtml(s.nick)} <span style="opacity:.65;font-size:10px;">${escHtml(courseLabel(s.course))}</span><button onclick="unlinkStudent('${u.email}',${id})">×</button></span>`:`<span class="stag" style="opacity:.6;">#${id}<button onclick="unlinkStudent('${u.email}',${id})">×</button></span>`;}).join('');
+        const unlinkedStudents=allStudents.filter(s=>!ids.includes(s.id));
+        const selectOpts=unlinkedStudents.map(s=>`<option value="${s.id}">[${escHtml(courseLabel(s.course))}] ${escHtml(s.nick)} (${escHtml(s.name)})</option>`).join('');
         return`<div class="user-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
           <div style="display:flex;align-items:center;gap:8px;width:100%;">
             <span class="user-email">${u.display_name?`<b>${escHtml(u.display_name)}</b> `:''}<span style="color:var(--t3);font-size:12px;">${escHtml(u.email)}</span></span>
@@ -2232,7 +2369,7 @@ async function cancelLeave(){
 
 async function reloadAfterLeave(){
   if(userRole==='viewer'){await loadViewerData();}
-  else{await loadLeavesForMonth(curY,curM,null);renderAll();refreshAdminLeaveIndicator();}
+  else{await loadLeavesForMonth(curY,curM,courseIds());renderAll();refreshAdminLeaveIndicator();}
 }
 
 // ============================================================
@@ -2405,7 +2542,7 @@ async function deleteLessonLog(skipConfirm){
 
 async function reloadAfterLog(){
   invalidateLessonCaches();
-  await loadLessonLogsForMonth(curY,curM,null);
+  await loadLessonLogsForMonth(curY,curM,courseIds());
   renderAll();
 }
 
@@ -2432,7 +2569,7 @@ async function renderLeaveAdmin(){
   if(!rows.length){sec.style.display='none';return;}
   sec.style.display='block';
   document.getElementById('leaveCountBadge').textContent=pending.length?`${pending.length} รอพิจารณา`:'ไม่มีค้าง';
-  const nameOf=id=>{const s=students.find(x=>x.id===id);return s?`${s.nick} <span style="font-weight:400;color:var(--t2);font-size:11px;">${s.name}</span>`:('#'+id);};
+  const nameOf=id=>{const s=allStudentById[id];return s?`${escHtml(s.nick)} <span style="font-weight:400;color:var(--t2);font-size:11px;">${escHtml(s.name)} · ${escHtml(courseLabel(s.course))}</span>`:('#'+id);};
   let h='';
   if(pending.length){
     h+='<div class="lv-list">';
@@ -2472,7 +2609,7 @@ async function decideLeave(id,status){
   try{requireAdmin();}catch(e){return;}
   showLoading(true);
   await sb.from('leave_requests').update({status,decided_by:currentUser.email,decided_at:new Date().toISOString()}).eq('id',id);
-  await loadLeavesForMonth(curY,curM,null);
+  await loadLeavesForMonth(curY,curM,courseIds());
   showLoading(false);
   renderAll();renderLeaveAdmin();
   showToast(status==='approved'?'อนุมัติแล้ว ✓':'ปฏิเสธแล้ว');
@@ -2481,7 +2618,7 @@ async function deleteLeave(id){
   try{requireAdmin();}catch(e){return;}
   if(!confirm('ลบรายการนี้ออกจากประวัติ?'))return;
   await sb.from('leave_requests').delete().eq('id',id);
-  await loadLeavesForMonth(curY,curM,null);
+  await loadLeavesForMonth(curY,curM,courseIds());
   renderAll();renderLeaveAdmin();
   showToast('ลบแล้ว');
 }
@@ -2490,11 +2627,18 @@ async function deleteLeave(id){
 // STUDENT CRUD
 // ============================================================
 function buildSchedGrid(schedule){
-  const classDays=getClassDays(curY,curM);
-  let h=`<table class="smt"><thead><tr><th class="tdate">วันที่</th><th style="background:#dbeafe;color:#1e40af;">M10</th><th style="background:#d1fae5;color:#065f46;">M13</th><th style="background:#ede9fe;color:#4c1d95;">M15</th><th style="background:#fef9c3;color:#854d0e;">M17</th></tr></thead><tbody>`;
+  // ใช้ union ของทั้งวันและคาบ (ดู getClassDays/visibleSlots) — สำคัญมากตรงนี้
+  // เพราะ saveStudent ลบตารางทั้งเดือนแล้วเขียนใหม่จากช่องติ๊ก
+  // ถ้าวัน/คาบที่มีข้อมูลอยู่ไม่ถูกวาดออกมา กดบันทึกทีเดียวข้อมูลนั้นจะหายถาวร
+  const one=[{schedule:schedule||{}}];
+  const classDays=getClassDays(curY,curM,one);
+  const SL=visibleSlots(curY,curM,one);
+  let h=`<table class="smt"><thead><tr><th class="tdate">วันที่</th>`
+    +SL.map(sl=>`<th style="${slotStyle(sl)}" title="${SLB[sl]||''}">${sl}</th>`).join('')
+    +`</tr></thead><tbody>`;
   classDays.forEach(d=>{
     h+=`<tr><td class="tdate">${d.dayTh} ${d.date}</td>`;
-    SLOTS.forEach(sl=>{const chk=(schedule[d.iso]||[]).includes(sl)?'checked':'';h+=`<td><input type="checkbox" data-iso="${d.iso}" data-slot="${sl}" ${chk} style="cursor:pointer;width:16px;height:16px;"></td>`;});
+    SL.forEach(sl=>{const chk=(schedule[d.iso]||[]).includes(sl)?'checked':'';h+=`<td><input type="checkbox" data-iso="${d.iso}" data-slot="${sl}" ${chk} style="cursor:pointer;width:16px;height:16px;"></td>`;});
     h+='</tr>';
   });
   return h+'</tbody></table>';
@@ -2511,7 +2655,7 @@ function getSchedFromModal(){
 function openAdd(){
   try{requireAdmin();}catch(e){return;}
   editingStudentId=null;
-  document.getElementById('modalTitle').textContent='เพิ่มนักเรียน';
+  document.getElementById('modalTitle').textContent=`เพิ่มนักเรียน — คอร์ส ${courseLabel(activeCourse)}`;
   document.getElementById('inp-name').value='';document.getElementById('inp-nick').value='';
   document.getElementById('inp-grade').value='ม.5';document.getElementById('inp-paid').value='false';
   document.getElementById('deleteBtn').style.display='none';
@@ -2523,7 +2667,7 @@ function openEdit(id){
   try{requireAdmin();}catch(e){return;}
   const s=students.find(x=>x.id===id);if(!s)return;
   editingStudentId=id;
-  document.getElementById('modalTitle').textContent=`แก้ไข — ${s.nick}`;
+  document.getElementById('modalTitle').textContent=`แก้ไข — ${s.nick} · คอร์ส ${courseLabel(s.course)}`;
   document.getElementById('inp-name').value=s.name;document.getElementById('inp-nick').value=s.nick;
   document.getElementById('inp-grade').value=s.grade;document.getElementById('inp-paid').value=s.paid?'true':'false';
   document.getElementById('deleteBtn').style.display='inline-flex';
@@ -2552,7 +2696,7 @@ async function saveStudent(){
         if(e3)throw e3;
       }
     } else {
-      const{data,error:e1}=await sb.from('students').insert({name,nick,grade,paid}).select().single();
+      const{data,error:e1}=await sb.from('students').insert({name,nick,grade,paid,course:activeCourse}).select().single();
       if(e1)throw e1;
       if(data)for(const[iso,slots] of Object.entries(schedule)){
         const{error:e2}=await sb.from('schedules').insert({student_id:data.id,iso_date:iso,slots});
@@ -2648,13 +2792,18 @@ function parseCSV(text){
     parsed.push({no:parseInt(noV),name,nick,grade,schedule});
   }
   if(!parsed.length)throw new Error('ไม่พบข้อมูลนักเรียน');
+  // อ่านชื่อคนได้แต่ไม่มีคาบไหนตรงเลย = แทบจะแน่นอนว่า import ไฟล์ผิดคอร์ส
+  // (รหัสคาบไม่ซ้ำข้ามคอร์ส ดู COURSES) ต้องหยุดก่อน ไม่งั้นจะได้นักเรียนเปล่าเข้ามาเพียบ
+  if(!parsed.some(p=>Object.keys(p.schedule).length)){
+    throw new Error(`ไม่พบคาบเรียนของคอร์ส ${courseLabel(activeCourse)} (${SLOTS.join(', ')}) ในไฟล์นี้ — ไฟล์อาจเป็นของอีกคอร์ส หรือสลับคอร์สบนแถบบนก่อน`);
+  }
   return{year:detY,month:detM,students:parsed};
 }
 
 function showImportPreview(result){
   const{year,month,students:ps}=result;
   const withS=ps.filter(s=>Object.keys(s.schedule).length>0);
-  document.getElementById('importTitle').textContent=`พบ ${ps.length} คน (${withS.length} คนมีตาราง) — ${THMO[month]} ${year+543}`;
+  document.getElementById('importTitle').textContent=`พบ ${ps.length} คน (${withS.length} คนมีตาราง) — ${THMO[month]} ${year+543} · เข้าคอร์ส ${courseLabel(activeCourse)}`;
   let h='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;"><tr><th style="text-align:left;padding:3px 6px;">ชื่อเล่น</th><th>ชั้น</th><th>ครั้ง</th></tr>';
   withS.slice(0,5).forEach(s=>{const tot=Object.values(s.schedule).reduce((n,sl)=>n+sl.length,0);h+=`<tr><td style="padding:3px 6px;">${s.nick}</td><td style="text-align:center;">${s.grade}</td><td style="text-align:center;">${tot}</td></tr>`;});
   if(withS.length>5)h+=`<tr><td colspan="3" style="padding:3px 6px;color:var(--t3);">... และอีก ${withS.length-5} คน</td></tr>`;
@@ -2680,7 +2829,7 @@ async function confirmImport(){
         if(p.grade){const{error}=await sb.from('students').update({grade:p.grade}).eq('id',sid);if(error)throw error;}
         updated++;
       } else {
-        const{data,error}=await sb.from('students').insert({name:p.name,nick:p.nick,grade:p.grade,paid:false}).select().single();
+        const{data,error}=await sb.from('students').insert({name:p.name,nick:p.nick,grade:p.grade,paid:false,course:activeCourse}).select().single();
         if(error)throw error;
         sid=data?.id;added++;
       }
@@ -2734,9 +2883,10 @@ async function changeMonth(d){
   curM+=d;if(curM<0){curM=11;curY--;}if(curM>11){curM=0;curY++;}
   showLoading(true);
   try{
+    const ids=courseIds();   // เฉพาะนักเรียนของคอร์สที่เลือกอยู่
     await loadSchedulesForMonth(curY,curM);
-    await loadLeavesForMonth(curY,curM,null);
-    await loadLessonLogsForMonth(curY,curM,null);
+    await loadLeavesForMonth(curY,curM,ids);
+    await loadLessonLogsForMonth(curY,curM,ids);
     renderAll();
   }catch(err){
     console.error('changeMonth failed:',err);

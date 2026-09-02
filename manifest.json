@@ -1,7 +1,7 @@
 {
-  "name": "ตารางเรียน HB",
-  "short_name": "HB",
-  "description": "ระบบจัดการตารางเรียน HB",
+  "name": "ตารางเรียน Sapiens",
+  "short_name": "Sapiens",
+  "description": "ระบบจัดการตารางเรียน คอร์ส HB และ Skill",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
