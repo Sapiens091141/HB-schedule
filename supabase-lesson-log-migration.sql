@@ -19,7 +19,8 @@ create table if not exists public.lesson_logs (
   start_time   time,                            -- เวลาเข้าเรียนจริง
   end_time     time,                            -- เวลาเลิกเรียนจริง
   sheets       jsonb  not null default '[]'::jsonb,
-  --   [{ "name":"ตรีโกณ เล่ม 3", "video_done":true, "pages_done":12, "pages_total":20 }, ...]
+  --   [{ "name":"ตรีโกณ เล่ม 3", "sheet_done":true, "video_done":true, "pages_done":12, "pages_total":20 }, ...]
+  --   sheet_done = เรียนชีทแผ่นนี้จบแล้ว (ไม่ต้อง migrate — ชีทเก่าที่ไม่มีคีย์นี้ถือว่ายังไม่จบ)
   homework     text,                            -- การบ้าน
   teacher_note text,                            -- ความเห็นจากผู้สอน
   created_by   text,
@@ -27,7 +28,8 @@ create table if not exists public.lesson_logs (
   updated_by   text,
   updated_at   timestamptz default now(),
   constraint lesson_logs_uniq unique (student_id, iso_date, slot),
-  constraint lesson_logs_slot_valid check (slot in ('M10','M13','M15','M17'))
+  -- ตรวจ "รูปแบบ" ไม่ใช่ "รายชื่อคาบ" — เพิ่มคอร์ส/คาบใหม่ได้โดยไม่ต้องแก้ DB (ดู supabase-lesson-log-slot-fix.sql)
+  constraint lesson_logs_slot_valid check (slot ~ '^[A-Z]{1,2}[0-9]{1,2}$')
 );
 
 -- 2) อัปเกรดจาก v1 (เพิ่มคอลัมน์ที่ยังไม่มี) --------------------------------
@@ -37,6 +39,11 @@ alter table public.lesson_logs add column if not exists sheets       jsonb not n
 alter table public.lesson_logs add column if not exists homework     text;
 alter table public.lesson_logs add column if not exists teacher_note text;
 alter table public.lesson_logs add column if not exists updated_by   text;
+
+-- CHECK รหัสคาบเวอร์ชันแรกล็อกไว้เฉพาะคอร์ส HB ('M10','M13','M15','M17') → คอร์ส Skill (S15) บันทึกไม่ได้
+alter table public.lesson_logs drop constraint if exists lesson_logs_slot_valid;
+alter table public.lesson_logs add  constraint lesson_logs_slot_valid
+  check (slot ~ '^[A-Z]{1,2}[0-9]{1,2}$');
 
 -- 3) ตัดคอลัมน์ content ทิ้ง — ย้ายข้อมูลเดิมไปเป็น "ชีทแผ่นแรก" ก่อนลบ ---------
 do $$

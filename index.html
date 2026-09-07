@@ -312,6 +312,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .sheet-sub{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
 .sheet-chk{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;user-select:none;}
 .sheet-chk input{width:15px;height:15px;accent-color:var(--ac2);cursor:pointer;margin:0;}
+.sheet-chk.done input{accent-color:var(--ac);}
 .sheet-pg{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--t2);}
 .sheet-pg input{width:52px;padding:5px 6px;border:1px solid var(--bd);border-radius:7px;font-family:'Sarabun',sans-serif;font-size:13px;text-align:center;background:var(--s);color:var(--t);outline:none;}
 .sheet-add{width:100%;padding:8px;border:1px dashed var(--bd);border-radius:9px;background:none;color:var(--t2);font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
@@ -322,6 +323,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--t);font-s
 .sh-name{font-weight:600;}
 .sh-tag{font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;white-space:nowrap;}
 .sh-vid-y{background:#d1fae5;color:#065f46;}
+.sh-done-y{background:#dbeafe;color:#1e40af;}
 .sh-pg{font-size:11px;font-weight:600;color:var(--t2);white-space:nowrap;}
 .lg-time{font-size:11px;font-weight:700;color:var(--ac);background:var(--acl);padding:1px 7px;border-radius:20px;white-space:nowrap;}
 .lg-block{margin-top:5px;font-size:12px;color:var(--t2);line-height:1.55;white-space:pre-wrap;word-break:break-word;}
@@ -1929,7 +1931,7 @@ function logMinutes(r){
 }
 // ชีทชื่อเดียวกันถูกเรียนได้หลายคาบ → ยุบตามชื่อ แต่ "วิดิโอ" กับ "โจทย์" ใช้กฎคนละแบบ
 //
-//   วิดิโอ = เคยติ๊กไหม (OR ทุกคาบ)  ไม่ใช่เอาสถานะคาบล่าสุด
+//   จบชีท / วิดิโอ = เคยติ๊กไหม (OR ทุกคาบ)  ไม่ใช่เอาสถานะคาบล่าสุด
 //     เพราะครูดูวิดิโอจบในคาบแรกที่เจอชีทแล้วติ๊กไว้ คาบถัดๆ ไปทำแต่โจทย์จึงไม่ติ๊ก
 //     ถ้าเอาคาบล่าสุด การติ๊กที่เคยทำจะถูกลบล้างทุกครั้งที่เรียนชีทเดิมซ้ำ เช่น
 //       08-05 EC01 [ติ๊ก] -/-  ·  08-07 EC01 [ไม่ติ๊ก] 4/8  ·  08-14 EC01 [ไม่ติ๊ก] 8/8
@@ -1943,10 +1945,11 @@ function sheetsByName(logs){
     sheetList(r).forEach(sh=>{
       if(!sh)return;
       const name=String(sh.name||'').trim();
-      if(!name&&sh.pages_total==null&&sh.pages_done==null&&!sh.video_done)return;
+      if(!name&&sh.pages_total==null&&sh.pages_done==null&&!sh.video_done&&!sh.sheet_done)return;
       const key=name||'(ไม่ระบุชื่อชีท)';
-      const prev=m.get(key)||{video:false,pd:null,pt:null};
+      const prev=m.get(key)||{done:false,video:false,pd:null,pt:null};
       m.set(key,{
+        done:prev.done||!!sh.sheet_done,
         video:prev.video||!!sh.video_done,
         pd:sh.pages_done!=null?sh.pages_done:prev.pd,
         pt:sh.pages_total!=null?sh.pages_total:prev.pt
@@ -1961,13 +1964,14 @@ function pendingVideos(logs){
 function reportStats(logs){
   let minutes=0; logs.forEach(r=>{minutes+=logMinutes(r);});
   const m=sheetsByName(logs);
-  let vid=0,pd=0,pt=0,hasPages=false;
+  let vid=0,done=0,pd=0,pt=0,hasPages=false;
   m.forEach(v=>{
+    if(v.done)done++;
     if(v.video)vid++;
     if(v.pd!=null){pd+=v.pd;hasPages=true;}
     if(v.pt!=null){pt+=v.pt;hasPages=true;}
   });
-  return{sessions:logs.length,minutes,sheets:m.size,vid,pd,pt,hasPages,
+  return{sessions:logs.length,minutes,sheets:m.size,vid,done,pd,pt,hasPages,
          pending:[...m].filter(([,v])=>!v.video).map(([k])=>k)};
 }
 
@@ -1987,15 +1991,17 @@ async function drawMonthlyReport(student,logs,idx){
   const entries=dayKeys.map(iso=>{
     const items=days[iso].map(r=>{
       const sheets=sheetList(r).filter(sh=>sh&&(sh.name||sh.pages_total!=null)).map(sh=>{
-        // กันระยะให้ป้าย "วิดิโอ" + "x/y หน้า" ตามความกว้างจริง ไม่ใช่ค่าคงที่ (ชื่อชีทยาวจะได้ไม่ชนป้าย)
-        const vtxt=sh.video_done?'\u2714 ดูวิดิโอจบ':'';
-        mc.font=rpFont(700,8.5); const vw=vtxt?mc.measureText(vtxt).width+10:0;
+        // กันระยะให้ป้าย "จบชีท"/"วิดิโอ" + "x/y หน้า" ตามความกว้างจริง ไม่ใช่ค่าคงที่ (ชื่อชีทยาวจะได้ไม่ชนป้าย)
+        const tags=[];
+        if(sh.sheet_done)tags.push({t:'\u2714 จบชีท',bg:'#dbeafe',fg:'#1e40af'});
+        if(sh.video_done)tags.push({t:'\u2714 ดูวิดิโอจบ',bg:'#d1fae5',fg:'#065f46'});
+        mc.font=rpFont(700,8.5); tags.forEach(g=>{g.w=mc.measureText(g.t).width+10;});
         const pages=(sh.pages_done!=null||sh.pages_total!=null)?`${sh.pages_done??'–'}/${sh.pages_total??'–'} หน้า`:'';
         mc.font=rpFont(600,9.5); const pw=pages?mc.measureText(pages).width:0;
-        const reserve=vw+(pw?pw+8:0);
+        const reserve=tags.reduce((n,g)=>n+g.w+4,0)+(pw?pw+8:0);
         mc.font=rpFont(400,11);
         return{name:rpWrap(mc,sh.name||'(ไม่ระบุชื่อชีท)',Math.max(110,CW-46-reserve)),
-               video:!!sh.video_done,vtxt,vw,pages,pw};
+               tags,pages,pw};
       });
       mc.font=rpFont(400,10.5);
       const hw=r.homework?rpWrap(mc,'การบ้าน: '+r.homework,CW-34):null;
@@ -2013,7 +2019,14 @@ async function drawMonthlyReport(student,logs,idx){
   mc.font=rpFont(600,10.5);
   const pendLines=st.pending.length?rpWrap(mc,'⏳ ยังดูวิดิโอไม่จบ: '+st.pending.join('  ·  '),CW-16):[];
   const PENDBOX=pendLines.length?pendLines.length*14+8:0, PEND=PENDBOX?PENDBOX+10:0;
-  const HEAD=78, CARD=62, STATS=74, BARS=(st.hasPages||st.sheets)?54:0, SECT=30, FOOT=40;
+  // แถบความคืบหน้า: จบชีท + วิดิโอ (มีเมื่อมีชีท) · โจทย์ (คงเงื่อนไขเดิม)
+  const barList=[];
+  if(st.sheets){
+    barList.push(['ชีทที่เรียนจบ',st.done,st.sheets,'ชีท',RP.ac]);
+    barList.push(['วิดิโอที่ดูจบ',st.vid,st.sheets,'คลิป',RP.ac2]);
+  }
+  if(st.hasPages||st.sheets)barList.push(['โจทย์ที่ทำ',st.pd,st.pt,'หน้า',RP.wa]);
+  const HEAD=78, CARD=62, STATS=74, BARS=barList.length*27, SECT=30, FOOT=40;
   const listH=entries.length?entries.reduce((n,e)=>n+e.h,0):46;
   const H=Math.round(HEAD+CARD+STATS+BARS+PEND+SECT+listH+FOOT);
 
@@ -2050,7 +2063,7 @@ async function drawMonthlyReport(student,logs,idx){
   const tiles=[
     ['เข้าเรียน',String(st.sessions),'ครั้ง',RP.ac],
     ['รวมเวลาเรียน',(Math.round(hrs*10)/10).toString(),'ชั่วโมง',RP.ac2],
-    ['ชีทที่เรียน',String(st.sheets),'ชีท',RP.wa]
+    ['ชีทที่เรียน',String(st.sheets),st.sheets?`ชีท · จบแล้ว ${st.done}`:'ชีท',RP.wa]
   ];
   const tw=(CW-16)/3;
   tiles.forEach((t,i)=>{
@@ -2072,8 +2085,7 @@ async function drawMonthlyReport(student,logs,idx){
     if(pct>0){c.fillStyle=col; rpRect(c,P,y+13,Math.max(7,CW*pct),7,4); c.fill();}
     y+=27;
   };
-  if(BARS){ bar('วิดิโอที่ดูจบ',st.vid,st.sheets,'คลิป',RP.ac2);
-            bar('โจทย์ที่ทำ',st.pd,st.pt,'หน้า',RP.ac); }
+  barList.forEach(a=>bar(a[0],a[1],a[2],a[3],a[4]));
   if(PENDBOX){
     c.fillStyle='#fef3c7'; c.strokeStyle='#fde68a'; c.lineWidth=1;
     rpRect(c,P,y,CW,PENDBOX,8); c.fill(); c.stroke();
@@ -2107,13 +2119,14 @@ async function drawMonthlyReport(student,logs,idx){
       it.sheets.forEach(sh=>{
         const top=yy;
         sh.name.forEach((ln,i)=>{rpText(c,(i===0?'📄 ':'    ')+ln,P+14,yy+9,{font:rpFont(i===0?600:400,11),color:RP.t});yy+=14;});
-        const tagX=P+CW-12;
-        if(sh.pages)rpText(c,sh.pages,tagX,top+9,{font:rpFont(600,9.5),color:RP.t2,align:'right'});
-        if(sh.vtxt){
-          const vx=tagX-(sh.pages?sh.pw+8:0);
-          c.fillStyle='#d1fae5'; rpRect(c,vx-sh.vw,top,sh.vw,13,6.5); c.fill();
-          rpText(c,sh.vtxt,vx-sh.vw/2,top+9,{font:rpFont(700,8.5),color:'#065f46',align:'center'});
-        }
+        let tagX=P+CW-12;
+        if(sh.pages){rpText(c,sh.pages,tagX,top+9,{font:rpFont(600,9.5),color:RP.t2,align:'right'});tagX-=sh.pw+8;}
+        // ป้ายเรียงจากขวาไปซ้ายตามลำดับใน tags (ตัวหลังสุดอยู่ขวาสุด)
+        sh.tags.slice().reverse().forEach(g=>{
+          c.fillStyle=g.bg; rpRect(c,tagX-g.w,top,g.w,13,6.5); c.fill();
+          rpText(c,g.t,tagX-g.w/2,top+9,{font:rpFont(700,8.5),color:g.fg,align:'center'});
+          tagX-=g.w+4;
+        });
         yy+=2;
       });
       if(it.hw){yy+=5;it.hw.forEach((ln,i)=>{rpText(c,(i===0?'📝 ':'    ')+ln,P+14,yy+9,{font:rpFont(400,10.5),color:RP.t2});yy+=14;});}
@@ -2377,7 +2390,7 @@ async function reloadAfterLeave(){
 // ============================================================
 // ---- ชีท: helper สำหรับอ่าน/เขียน/แสดงผล ----
 // รูปแบบที่เก็บใน lesson_logs.sheets (jsonb array):
-//   [{ name, video_done, pages_done, pages_total }, ...]
+//   [{ name, sheet_done, video_done, pages_done, pages_total }, ...]
 function slotTimes(slot){
   // ดึงเวลาเริ่ม/จบของคาบจาก SLB (แหล่งความจริงเดียว) เช่น 'M13' -> ['13:00','15:00']
   const parts=String(SLB[slot]||'').split('\u2013');
@@ -2410,10 +2423,11 @@ function sheetsHtml(row){
   return list.map(sh=>{
     // แสดงเฉพาะคาบที่ติ๊กจริง — คาบที่ไม่ติ๊กแปลว่า "วันนั้นไม่ได้ดูวิดิโอ" ไม่ใช่ "ยังดูไม่จบ"
     // สถานะค้างจริงดูที่สรุปรายเดือน (pendingVideos) ซึ่งคิดจาก "เคยติ๊กไหม"
+    const done=sh.sheet_done?'<span class="sh-tag sh-done-y">✔ จบชีท</span>':'';
     const vid=sh.video_done?'<span class="sh-tag sh-vid-y">✔ ดูวิดิโอจบ</span>':'';
     const pg=(sh.pages_done!=null||sh.pages_total!=null)
       ? `<span class="sh-pg">โจทย์ ${sh.pages_done??'–'}/${sh.pages_total??'–'} หน้า</span>` : '';
-    return `<div class="sh-line">📄 <span class="sh-name">${escHtml(sh.name||'(ไม่ระบุชื่อชีท)')}</span>${vid}${pg}</div>`;
+    return `<div class="sh-line">📄 <span class="sh-name">${escHtml(sh.name||'(ไม่ระบุชื่อชีท)')}</span>${done}${vid}${pg}</div>`;
   }).join('');
 }
 
@@ -2428,6 +2442,7 @@ function sheetRowHtml(sh){
       <button type="button" class="sheet-del" title="ลบชีทนี้" onclick="removeSheetRow(this)">\u2715</button>
     </div>
     <div class="sheet-sub">
+      <label class="sheet-chk done" title="ติ๊กเมื่อเรียนชีทนี้จบทั้งแผ่นแล้ว · ใช้นับจำนวนชีทที่จบในสรุปรายเดือน"><input type="checkbox" class="sheet-done"${sh.sheet_done?' checked':''}> จบชีทแล้ว</label>
       <label class="sheet-chk" title="1 ชีท = 1 คลิป · ติ๊กเมื่อดูจบแล้วเท่านั้น"><input type="checkbox" class="sheet-vid"${sh.video_done?' checked':''}> ดูวิดิโอจบแล้ว</label>
       <span class="sheet-pg">โจทย์
         <input type="number" min="0" class="sheet-pd" placeholder="–" value="${sh.pages_done??''}"> /
@@ -2457,11 +2472,12 @@ function collectSheets(){
   const num=v=>{const t=String(v).trim();if(t==='')return null;const n=parseInt(t,10);return isNaN(n)||n<0?null:n;};
   return [...document.querySelectorAll('#lessonSheets .sheet-row')].map(r=>({
     name:r.querySelector('.sheet-name').value.trim(),
+    sheet_done:r.querySelector('.sheet-done').checked,
     video_done:r.querySelector('.sheet-vid').checked,
     pages_done:num(r.querySelector('.sheet-pd').value),
     pages_total:num(r.querySelector('.sheet-pt').value)
   // แถวที่ไม่ได้กรอกอะไรเลย ไม่ต้องเก็บ
-  })).filter(sh=>sh.name||sh.video_done||sh.pages_done!=null||sh.pages_total!=null);
+  })).filter(sh=>sh.name||sh.sheet_done||sh.video_done||sh.pages_done!=null||sh.pages_total!=null);
 }
 
 function openLessonLog(sid,iso,slot){
@@ -2520,11 +2536,21 @@ async function saveLessonLog(){
              updated_by:currentUser.email,updated_at:new Date().toISOString()};
   if(!existing)row.created_by=currentUser.email;   // upsert แตะเฉพาะคอลัมน์ที่ส่งไป
   const{error}=await sb.from('lesson_logs').upsert(row,{onConflict:'student_id,iso_date,slot'});
+  if(error){showLoading(false);showToast(saveLogErrMsg(error));return;}   // ไม่ปิด modal — ข้อมูลที่พิมพ์ต้องไม่หาย
   closeModal('lessonOv');
-  if(error){showLoading(false);showToast('บันทึกไม่ได้: '+error.message);return;}
   await reloadAfterLog();
   showLoading(false);
   showToast('บันทึกการเรียนแล้ว ✓');
+}
+
+// CHECK ของ lesson_logs.slot เดิมล็อกไว้แค่คาบคอร์ส HB — คอร์สใหม่ (เช่น S15) จะบันทึกไม่ผ่าน
+// จนกว่าจะรัน supabase-lesson-log-slot-fix.sql · แปลงเป็นข้อความที่บอกวิธีแก้ตรงๆ
+function saveLogErrMsg(error){
+  const m=String(error&&error.message||error||'');
+  if(m.includes('lesson_logs_slot_valid'))
+    return 'บันทึกไม่ได้: ฐานข้อมูลยังไม่รู้จักรหัสคาบ '+(pendingLog&&pendingLog.slot||'')
+          +' — ต้องรัน supabase-lesson-log-slot-fix.sql ใน Supabase ก่อน';
+  return 'บันทึกไม่ได้: '+m;
 }
 
 async function deleteLessonLog(skipConfirm){
@@ -2533,8 +2559,8 @@ async function deleteLessonLog(skipConfirm){
   if(!skipConfirm&&!confirm('ลบบันทึกการเรียนของคาบนี้?'))return;
   showLoading(true);
   const{error}=await sb.from('lesson_logs').delete().eq('id',ex.id);
-  closeModal('lessonOv');
   if(error){showLoading(false);showToast('ลบไม่ได้: '+error.message);return;}
+  closeModal('lessonOv');
   await reloadAfterLog();
   showLoading(false);
   showToast('ลบบันทึกแล้ว');
