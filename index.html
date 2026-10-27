@@ -917,10 +917,17 @@ const DTH={0:'อา',1:'จ',2:'อ',3:'พ',4:'พฤ',5:'ศ',6:'ส'};
 //
 // รหัสคาบห้ามซ้ำข้ามคอร์ส — SLB/สีป้ายใช้ร่วมกันทั้งระบบ (viewer มีลูกคนละคอร์สได้)
 // และตัวตรวจ Import CSV อาศัยรหัสที่ไม่ซ้ำ เพื่อจับกรณี import ไฟล์ผิดคอร์ส
+//
+// plans = เปลี่ยนวัน/คาบตั้งแต่เดือน from เป็นต้นไป (เรียงเดือนจากเก่าไปใหม่)
+//   days = {เลขวัน:[คาบที่เปิดวันนั้น]} — ใช้แทน cdow/slots ทั้งชุด
+//   เดือนก่อน from ยังใช้ cdow + ทุกคาบใน slots เหมือนเดิม
+//   รหัสคาบเก่าต้องคงไว้ใน slots เสมอ (ใช้แปลงเวลา/สีของข้อมูลเดือนเก่า)
 // ============================================================
 const COURSES={
-  HB:   {label:'HB',    cdow:[0,1,2,3,4,5,6], slots:{M10:'10:00–12:00',M13:'13:00–15:00',M15:'15:00–17:00',M17:'17:00–19:00'}},
-  SKILL:{label:'Skill', cdow:[0,1,2,3,4,5,6], slots:{S9:'09:00–10:00',S15:'15:00–16:00',S17:'17:00–18:00',S18:'18:00–19:00',S19:'19:00–20:00'}},
+  HB:   {label:'HB',    cdow:[0,1,2,3,4,5,6], slots:{M10:'10:00–12:00',M13:'13:00–15:00',M15:'15:00–17:00',M17:'17:00–19:00',MH17:'17:30–19:30'},
+         plans:[{from:'2026-11',days:{3:['MH17'],5:['MH17'],6:['M10','M13'],0:['M10','M13']}}]},
+  SKILL:{label:'Skill', cdow:[0,1,2,3,4,5,6], slots:{S9:'09:00–10:00',S15:'15:00–16:00',S16:'16:30–17:30',S17:'17:00–18:00',S18:'18:00–19:00',S19:'19:00–20:00'},
+         plans:[{from:'2026-11',days:{3:['S16'],5:['S16'],6:['S9'],0:['S9']}}]},
 };
 const COURSE_KEYS=Object.keys(COURSES);
 const DEFAULT_COURSE='HB';
@@ -931,7 +938,27 @@ function courseLabel(v){return COURSES[courseOf(v)].label;}
 // บันทึกเก่า / การลา / ภาพสรุป ต้องอ่านรหัสคาบข้ามคอร์สได้เสมอ
 const SLB={};
 COURSE_KEYS.forEach(k=>Object.assign(SLB,COURSES[k].slots));
-const ALL_CDOW=[...new Set(COURSE_KEYS.flatMap(k=>COURSES[k].cdow))];
+
+// วัน+คาบที่เปิดของคอร์ส k ในเดือน y/m (m เริ่ม 0) → {เลขวัน:[รหัสคาบ]}
+function coursePlan(k,y,m){
+  const c=COURSES[courseOf(k)], ym=`${y}-${String(m+1).padStart(2,'0')}`;
+  const p=(c.plans||[]).filter(p=>p.from<=ym).pop();
+  if(p)return p.days;
+  const all=Object.keys(c.slots), r={};
+  c.cdow.forEach(d=>{r[d]=all;});
+  return r;
+}
+function planDows(k,y,m){return Object.keys(coursePlan(k,y,m)).map(Number);}
+function planSlots(k,y,m){
+  const open=new Set(Object.values(coursePlan(k,y,m)).flat());
+  return Object.keys(COURSES[courseOf(k)].slots).filter(sl=>open.has(sl));
+}
+function slotOpen(k,iso,sl){
+  const[y,m]=iso.split('-').map(Number);
+  return(coursePlan(k,y,m-1)[isoToDate(iso).getDay()]||[]).includes(sl);
+}
+// viewer ไม่ได้เลือกคอร์ส จึงใช้วันเรียนของทุกคอร์สรวมกัน
+function allPlanDows(y,m){return[...new Set(COURSE_KEYS.flatMap(k=>planDows(k,y,m)))];}
 
 // จานสีคาบ — ไล่ตามลำดับคาบภายในคอร์ส คาบที่เพิ่มใหม่จึงได้สีเอง ไม่ต้องเขียน CSS เพิ่ม
 const SLOT_PALETTE=[
@@ -949,13 +976,13 @@ function slotStyle(sl){const c=slotCol(sl);return`background:${c.bg};color:${c.f
 // คีย์เรียงบันทึกตาม วันที่+เวลาเริ่มคาบ — ห้ามเรียงด้วยรหัสคาบตรงๆ เพราะ 'S15' < 'S9' ตามตัวอักษร
 function logSortKey(r){return r.iso_date+'|'+(SLB[r.slot]||r.slot);}
 
-// คอร์สที่ admin กำลังดูอยู่ — CDOW/SLOTS/SLOT_SET เปลี่ยนตามคอร์ส จึงเป็น let
+// คอร์สที่ admin กำลังดูอยู่ — SLOTS/SLOT_SET เปลี่ยนตามคอร์ส จึงเป็น let
+// (SLOTS = ทุกรหัสคาบของคอร์ส ไม่สนเดือน — วัน/คาบรายเดือนดู coursePlan)
 let activeCourse=DEFAULT_COURSE;
-let CDOW=[],SLOTS=[],SLOT_SET=new Set();
+let SLOTS=[],SLOT_SET=new Set();
 function applyCourse(k){
   activeCourse=courseOf(k);
   const c=COURSES[activeCourse];
-  CDOW=c.cdow.slice();
   SLOTS=Object.keys(c.slots);
   SLOT_SET=new Set(SLOTS);
 }
@@ -1313,7 +1340,7 @@ function renderViewerPage(myStudents){
   document.getElementById('viewerMonthLabel').textContent=THMO[vM]+' '+(vY+543);
   // viewer ไม่มี "คอร์สที่เลือกอยู่" — ลูกอาจเรียนคนละคอร์ส จึงใช้วันเรียนของทุกคอร์สรวมกัน
   // (เดี๋ยวก็ถูกกรองเหลือเฉพาะวันที่มีตารางจริงอยู่แล้วด้วย entries ข้างล่าง)
-  const classDays=getClassDays(vY,vM,myStudents,ALL_CDOW);
+  const classDays=getClassDays(vY,vM,myStudents,allPlanDows(vY,vM));
   const content=document.getElementById('viewerContent');
 
   if(!userStudentIds||!userStudentIds.length){
@@ -1493,7 +1520,7 @@ function isoToDate(iso){
 // วันเรียน = วันตามคอนฟิกคอร์ส ∪ วันที่มีข้อมูลจริงในเดือนนั้น
 // ส่วนที่สองสำคัญ: ถ้าวันหนึ่งคอร์สย้าย/เลิกวันเรียน ตารางเดือนเก่าต้องไม่หายไปจากหน้าจอ
 function getClassDays(y,m,list,cdow){
-  const src=list||students, dows=cdow||CDOW;
+  const src=list||students, dows=cdow||planDows(activeCourse,y,m);
   const prefix=`${y}-${String(m+1).padStart(2,'0')}-`;
   const extra=new Set();
   (src||[]).forEach(s=>Object.entries(s.schedule||{}).forEach(([iso,sl])=>{
@@ -1508,13 +1535,13 @@ function getClassDays(y,m,list,cdow){
 }
 // คาบที่ต้องแสดง = คาบตามคอนฟิก ∪ คาบที่มีข้อมูลจริง (กันคาบที่เลิกใช้แล้วทำข้อมูลเก่าหาย)
 function visibleSlots(y,m,list){
-  const src=list||students;
+  const src=list||students, base=planSlots(activeCourse,y,m);
   const prefix=`${y}-${String(m+1).padStart(2,'0')}-`;
   const extra=[];
   (src||[]).forEach(s=>Object.entries(s.schedule||{}).forEach(([iso,sl])=>{
-    if(iso.startsWith(prefix))(sl||[]).forEach(x=>{if(!SLOT_SET.has(x)&&!extra.includes(x))extra.push(x);});
+    if(iso.startsWith(prefix))(sl||[]).forEach(x=>{if(!base.includes(x)&&!extra.includes(x))extra.push(x);});
   }));
-  return extra.length?SLOTS.concat(extra.sort()):SLOTS;
+  return extra.length?base.concat(extra.sort()):base;
 }
 function getSlots(s,iso){return(s.schedule||{})[iso]||[];}
 function totalInMonth(s,y,m){
@@ -2666,7 +2693,12 @@ function buildSchedGrid(schedule){
     +`</tr></thead><tbody>`;
   classDays.forEach(d=>{
     h+=`<tr><td class="tdate">${d.dayTh} ${d.date}</td>`;
-    SL.forEach(sl=>{const chk=(schedule[d.iso]||[]).includes(sl)?'checked':'';h+=`<td><input type="checkbox" data-iso="${d.iso}" data-slot="${sl}" ${chk} style="cursor:pointer;width:16px;height:16px;"></td>`;});
+    SL.forEach(sl=>{
+      const has=(schedule[d.iso]||[]).includes(sl);
+      // คาบที่วันนั้นไม่เปิด ไม่ต้องมีช่องติ๊ก — เว้นแต่มีข้อมูลเดิมอยู่ (ต้องวาด ไม่งั้นบันทึกแล้วหาย)
+      if(!has&&!slotOpen(activeCourse,d.iso,sl)){h+=`<td style="background:var(--s2);color:var(--t3);">·</td>`;return;}
+      h+=`<td><input type="checkbox" data-iso="${d.iso}" data-slot="${sl}" ${has?'checked':''} style="cursor:pointer;width:16px;height:16px;"></td>`;
+    });
     h+='</tr>';
   });
   return h+'</tbody></table>';
